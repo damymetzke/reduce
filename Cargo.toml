@@ -1,0 +1,23 @@
+[package]
+name = "reduce"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+askama = "0.12.1"
+askama_axum = "0.4.0"
+askama_escape = "0.10.3"
+axum = "0.7.3"
+serde = "1.0.193"
+serde_json = { version = "1.0", features = ["raw_value"] }
+
+# Dependencies with features are defined as such to make it more readable
+[dependencies.sqlx]
+version = "0.7.3"
+features = ["postgres", "runtime-tokio-rustls", "json", "macros"]
+
+[dependencies.tokio]
+version = "1.35.1"
+features = ["full"]

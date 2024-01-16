@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:15.5
+    container_name: reduce-postgresql-container
+    environment:
+      POSTGRES_DB: reduce_dev
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+
+  adminer:
+    image: adminer:4.8.1-standalone
+    container_name: reduce-adminer-container
+    ports:
+      - "8080:8080"
