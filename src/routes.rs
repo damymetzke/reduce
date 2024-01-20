@@ -18,24 +18,78 @@
 
 use askama::Template;
 use axum::{routing::get, Router};
-use sqlx::{Pool, Postgres};
+use chrono::Local;
+use itertools::Itertools;
+use sqlx::{query_as, Pool, Postgres};
 
-use crate::IndexTemplate;
+use crate::{error::AppResult, IndexTemplate};
+
+#[derive(Template)]
+#[template(path = "api/time-reports/list-item.html", escape = "none")]
+struct TimeReportItemTemplate {
+    start_time: Box<str>,
+    end_time: Box<str>,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/list-category.html", escape = "none")]
+struct TimeReportCategoryTemplate {
+    name: String,
+    times: Box<[TimeReportItemTemplate]>,
+}
 
 #[derive(Template)]
 #[template(path = "time-reports.html", escape = "none")]
-struct TimeReportsTemplate;
+struct TimeReportsTemplate {
+    time_reports_today: Box<[TimeReportCategoryTemplate]>,
+}
+
+#[derive(Debug)]
+struct TimeReportItem {
+    name: Box<str>,
+    start_time: Box<str>,
+    end_time: Box<str>,
+}
 
 async fn index() -> IndexTemplate {
     IndexTemplate
 }
 
-async fn time_reports()  -> TimeReportsTemplate {
-    TimeReportsTemplate
+async fn time_reports(db_pool: Pool<Postgres>) -> AppResult<TimeReportsTemplate> {
+    let time_reports_today = query_as! {
+        TimeReportItem,
+        "
+            SELECT te.start_time, te.end_time, tc.name
+            FROM time_entries te
+            JOIN time_categories tc ON te.category_id = tc.id
+            WHERE te.day = $1
+            ORDER BY tc.name, te.start_time;
+        ",
+        Local::now().date_naive()
+
+    }
+    .fetch_all(&db_pool)
+    .await?
+    .into_iter()
+    .group_by(|item| String::from(item.name.as_ref()))
+    .into_iter()
+    .map(|(name, times)| TimeReportCategoryTemplate {
+        name,
+        times: times.into_iter().map(|time| TimeReportItemTemplate {
+            start_time: time.start_time,
+            end_time: time.end_time,
+        }).collect(),
+    })
+    .collect();
+
+    Ok(TimeReportsTemplate { time_reports_today })
 }
 
-pub fn register(router: Router, _db_pool: Pool<Postgres>) -> Router {
+pub fn register(router: Router, db_pool: Pool<Postgres>) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/time-reports", get(|| async move { time_reports().await }))
+        .route(
+            "/time-reports",
+            get(|| async move { time_reports(db_pool).await }),
+        )
 }

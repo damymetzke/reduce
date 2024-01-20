@@ -16,29 +16,6 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Reduce</title>
-</head>
-<body>
-    <h1>Reduce - Time report</h1>
-
-    <h2> Reports for today </h2>
-    <ul>
-      {% for item in time_reports_today %}
-        <li> {{ item }} </li>
-      {% endfor %}
-    </ul>
-
-    <footer>
-      <p>
-        The source for this web site is available at: <br/>
-        <a href="https://github.com/damymetzke/reduce">
-          https://github.com/damymetzke/reduce
-        </a>
-      </p>
-    </footer>
-</body>
-</html>
+<p>
+  {{ start_time }} - {{ end_time }}
+</p>
