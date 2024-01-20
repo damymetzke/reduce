@@ -16,6 +16,8 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+use std::rc::Rc;
+
 use askama::Template;
 use axum::{routing::get, Router};
 use chrono::Local;
@@ -27,8 +29,8 @@ use crate::{error::AppResult, IndexTemplate};
 #[derive(Template)]
 #[template(path = "api/time-reports/list-item.html", escape = "none")]
 struct TimeReportItemTemplate {
-    start_time: Box<str>,
-    end_time: Box<str>,
+    start_time: Rc<str>,
+    end_time: Rc<str>,
 }
 
 #[derive(Template)]
@@ -55,6 +57,13 @@ async fn index() -> IndexTemplate {
     IndexTemplate
 }
 
+fn convert_time(raw: &str) -> Rc<str> {
+    match (raw.get(0..2), raw.get(2..4)) {
+        (Some(hour), Some(minute)) => Rc::from(format!("{h}:{m}", h = hour, m = minute)),
+        _ => Rc::from("_err_"),
+    }
+}
+
 async fn time_reports(db_pool: Pool<Postgres>) -> AppResult<TimeReportsTemplate> {
     let time_reports_today = query_as! {
         TimeReportItem,
@@ -75,10 +84,24 @@ async fn time_reports(db_pool: Pool<Postgres>) -> AppResult<TimeReportsTemplate>
     .into_iter()
     .map(|(name, times)| TimeReportCategoryTemplate {
         name,
-        times: times.into_iter().map(|time| TimeReportItemTemplate {
-            start_time: time.start_time,
-            end_time: time.end_time,
-        }).collect(),
+        times: times
+            .into_iter()
+            .map(
+                |TimeReportItem {
+                     start_time,
+                     end_time,
+                     ..
+                 }| {
+                    let start_time = convert_time(start_time.as_ref());
+                    let end_time = convert_time(end_time.as_ref());
+
+                    TimeReportItemTemplate {
+                        start_time,
+                        end_time,
+                    }
+                },
+            )
+            .collect(),
     })
     .collect();
 
