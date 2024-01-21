@@ -21,6 +21,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Reduce</title>
+  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 </head>
 <body>
     <h1>Reduce - Time report</h1>
@@ -30,6 +31,23 @@
       {% for item in time_reports_today %}
         <li> {{ item }} </li>
       {% endfor %}
+    </ul>
+
+    <h2> Report for date </h2>
+    
+    <form>
+      <input
+        type="date"
+        value="{{ picker_date }}"
+        name="date"
+        hx-get="/api/time-reports"
+        hx-trigger="change"
+        hx-target="#time-report-picker"
+        hx-params="*"
+        />
+    </form>
+    <ul id="time-report-picker">
+      {{ time_report_picker }}
     </ul>
 
     <footer>

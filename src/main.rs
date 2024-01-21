@@ -22,7 +22,7 @@ mod routes;
 use std::error::Error;
 
 use askama::Template;
-use axum::Router;
+use axum::{Extension, Router};
 
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let app = Router::new();
 
-    let app = routes::register(app, db_pool);
+    let app = routes::register(app).layer(Extension(db_pool));
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
