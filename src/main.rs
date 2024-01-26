@@ -23,6 +23,8 @@ use std::error::Error;
 
 use askama::Template;
 use axum::{Extension, Router};
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
@@ -30,6 +32,12 @@ struct IndexTemplate;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let tracing_subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::WARN)
+        .finish();
+
+    tracing::subscriber::set_global_default(tracing_subscriber)?;
+
     let db_url = "postgres://user:password@localhost:5432/reduce_dev";
     let db_pool = sqlx::postgres::PgPool::connect(db_url).await?;
 

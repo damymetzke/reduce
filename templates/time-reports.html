@@ -26,6 +26,10 @@
 <body>
     <h1>Reduce - Time report</h1>
 
+    <button hx-get="/api/time-reports/add" hx-swap="outerHTML">
+      Add reports
+    </button>
+
     <h2> Reports for today </h2>
     <ul>
       {% for item in time_reports_today %}

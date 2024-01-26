@@ -16,15 +16,15 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use askama::Template;
-use axum::{extract::Query, routing::get, Extension, Router};
+use axum::{extract::Query, routing::get, Extension, Form, Router};
 use chrono::{Local, NaiveDate};
 use itertools::Itertools;
 use serde::Deserialize;
-use sqlx::{query_as, Pool, Postgres};
+use sqlx::{query, query_as, Pool, Postgres};
 
 use crate::{error::AppResult, IndexTemplate};
 
@@ -47,6 +47,33 @@ struct TimeReportCategoryTemplate {
 struct TimeReportPickerTemplate {
     reports: Box<[TimeReportCategoryTemplate]>,
 }
+
+#[derive(Template, Clone)]
+#[template(path = "api/time-reports/add/item.html", escape = "none")]
+struct AddTimeReportItemTemplate {
+    i: u16,
+}
+
+#[derive(Template, Clone)]
+#[template(path = "api/time-reports/add/extra.html", escape = "none")]
+struct AddTimeReportExtraItemTemplate {
+    items: Arc<[AddTimeReportItemTemplate]>,
+    offset: u16,
+    add: u16,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/add.html", escape = "none")]
+struct AddTimeReportTemplate {
+    date: Arc<str>,
+    items: Arc<[AddTimeReportItemTemplate]>,
+    offset: u16,
+    add: u16,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/add/result.html", escape = "none")]
+struct AddTimeReportResultTemplate;
 
 #[derive(Template)]
 #[template(path = "time-reports.html", escape = "none")]
@@ -173,6 +200,151 @@ async fn time_reports(db_pool: Extension<Pool<Postgres>>) -> AppResult<TimeRepor
     })
 }
 
+#[derive(Debug)]
+struct CreateTimeReportItem {
+    category: Arc<str>,
+    start_time: Arc<str>,
+    end_time: Option<Arc<str>>,
+}
+
+#[derive(Debug)]
+struct CreateTimeReportParams {
+    date: NaiveDate,
+    items: Arc<[CreateTimeReportItem]>,
+}
+
+fn extract_new_time_report_items(
+    input: &HashMap<Arc<str>, Arc<str>>,
+) -> Result<Arc<[CreateTimeReportItem]>> {
+    let mut categories: HashMap<u16, &Arc<str>> = Default::default();
+    let mut start_times: HashMap<u16, &Arc<str>> = Default::default();
+    let mut end_times: HashMap<u16, &Arc<str>> = Default::default();
+
+    for value in input {
+        let (key, value) = value;
+        if value.is_empty() {
+            continue;
+        };
+
+        let (left, right) = match key.as_ref().split_once('-') {
+            Some(value) => value,
+            _ => continue,
+        };
+
+        let i: u16 = match left.parse() {
+            Ok(value) => value,
+            _ => continue,
+        };
+
+        if right == "-category" {
+            categories.insert(i, value);
+        };
+        if right == "-start-time" {
+            start_times.insert(i, value);
+        };
+        if right == "-end-time" {
+            end_times.insert(i, value);
+        };
+    }
+
+    let mut result: Vec<CreateTimeReportItem> = Default::default();
+
+    let mut i: u16 = 0;
+    loop {
+        let category = categories.get(&i);
+        let start_time = start_times.get(&i);
+        let end_time = end_times.get(&i).map(|value| (*value).clone());
+
+        let item = match (category, start_time, end_time) {
+            (Some(category), Some(start_time), end_time) => CreateTimeReportItem {
+                category: (*category).clone(),
+                start_time: (*start_time).clone(),
+                end_time,
+            },
+            (None, None, None) => break,
+            _ => return Err(anyhow!("Invalid list of items")),
+        };
+
+        result.push(item);
+
+        i += 1;
+    }
+
+    if categories.len() != i as usize || start_times.len() != i as usize {
+        return Err(anyhow!("Invalid list of items"));
+    }
+
+    if end_times.keys().any(|value| *value >= i) {
+        return Err(anyhow!("Invalid list of items"));
+    }
+
+    Ok(result.into())
+}
+
+fn hash_map_to_create_time_report_params(
+    input: &HashMap<Arc<str>, Arc<str>>,
+) -> Result<CreateTimeReportParams> {
+    let date = input
+        .get("date")
+        .ok_or(anyhow!("Expected 'date' parameter"))?;
+    let date = NaiveDate::parse_from_str(date.as_ref(), "%Y-%m-%d")?;
+
+    let items = extract_new_time_report_items(input)?;
+    Ok(CreateTimeReportParams { date, items })
+}
+
+async fn create_time_report(
+    Extension(db_pool): Extension<Pool<Postgres>>,
+    Form(params): Form<HashMap<Arc<str>, Arc<str>>>,
+) -> AppResult<AddTimeReportResultTemplate> {
+    let params = hash_map_to_create_time_report_params(&params)?;
+
+    let categories: Box<_> = params
+        .items
+        .iter()
+        .map(|value| value.category.to_string())
+        .collect();
+    let start_times: Box<_> = params
+        .items
+        .iter()
+        .map(|value| value.start_time.to_string())
+        .collect();
+    let end_times: Box<_> = params
+        .items
+        .iter()
+        .map(|value| value.end_time.clone().unwrap_or(Arc::from("")).to_string())
+        .collect();
+
+    query! {
+        "
+            INSERT INTO time_entries (category_id, day, start_time, end_time)
+            SELECT
+                tc.id AS category_id,
+                $1 AS day,
+                start_time AS start_time,
+                end_time AS end_time
+            FROM
+                time_categories tc
+            RIGHT JOIN
+                unnest(
+                    $2::VARCHAR[],
+                    $3::VARCHAR[],
+                    $4::VARCHAR[]
+                ) AS t(category_name, start_time, end_time)
+            ON
+                tc.name = t.category_name
+        ",
+        params.date,
+        categories.as_ref(),
+        start_times.as_ref(),
+        end_times.as_ref(),
+    }
+    .execute(&db_pool)
+    .await?;
+
+    Ok(AddTimeReportResultTemplate)
+}
+
 #[derive(Debug, Deserialize)]
 struct TimeReportPickerParams {
     date: Arc<str>,
@@ -186,9 +358,53 @@ async fn time_report_picker(
     Ok(make_time_report_picker(date?, db_pool.0).await?)
 }
 
+fn make_time_report_items(
+    offset: u16,
+    add: u16,
+) -> impl IntoIterator<Item = AddTimeReportItemTemplate> {
+    (offset..offset + add).map(|i| AddTimeReportItemTemplate { i })
+}
+
+#[derive(Debug, Deserialize)]
+struct AddTimeReportItemsParams {
+    offset: u16,
+    add: u16,
+}
+
+async fn add_time_report_items(
+    params: Query<AddTimeReportItemsParams>,
+) -> AddTimeReportExtraItemTemplate {
+    AddTimeReportExtraItemTemplate {
+        items: make_time_report_items(params.offset, params.add)
+            .into_iter()
+            .collect(),
+        offset: params.offset,
+        add: params.add,
+    }
+}
+
+async fn add_time_report() -> AppResult<AddTimeReportTemplate> {
+    Ok(AddTimeReportTemplate {
+        date: Local::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string()
+            .into(),
+        items: make_time_report_items(0, 5)
+            .into_iter()
+            .collect::<Vec<_>>()
+            .as_slice()
+            .into(),
+        offset: 5,
+        add: 5,
+    })
+}
+
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/time-reports", get(time_reports))
+        .route("/time-reports", get(time_reports).post(create_time_report))
         .route("/api/time-reports", get(time_report_picker))
+        .route("/api/time-reports/add", get(add_time_report))
+        .route("/api/time-reports/add/items", get(add_time_report_items))
 }
