@@ -81,6 +81,7 @@ struct TimeReportsTemplate {
     time_reports_today: Box<[TimeReportCategoryTemplate]>,
     picker_date: Arc<str>,
     time_report_picker: TimeReportPickerTemplate,
+    categories: Arc<[Arc<str>]>,
 }
 
 #[derive(Debug)]
@@ -150,7 +151,9 @@ fn convert_time(raw: &str) -> Arc<str> {
     }
 }
 
-async fn time_reports(db_pool: Extension<Pool<Postgres>>) -> AppResult<TimeReportsTemplate> {
+async fn time_reports(
+    Extension(db_pool): Extension<Pool<Postgres>>,
+) -> AppResult<TimeReportsTemplate> {
     let time_reports_today = query_as! {
         TimeReportItem,
         "
@@ -163,7 +166,7 @@ async fn time_reports(db_pool: Extension<Pool<Postgres>>) -> AppResult<TimeRepor
         Local::now().date_naive()
 
     }
-    .fetch_all(&db_pool.0)
+    .fetch_all(&db_pool)
     .await?
     .into_iter()
     .group_by(|item| String::from(item.name.as_ref()))
@@ -191,12 +194,23 @@ async fn time_reports(db_pool: Extension<Pool<Postgres>>) -> AppResult<TimeRepor
     })
     .collect();
 
+    let categories = query_as! {
+        GetCategoryNames,
+        "SELECT name FROM time_categories ORDER BY name ASC"
+    }
+    .fetch_all(&db_pool)
+    .await?
+    .into_iter()
+    .map(|value| value.name)
+    .collect();
+
     let today = Local::now().date_naive();
 
     Ok(TimeReportsTemplate {
         time_reports_today,
         picker_date: today.format("%Y-%m-%d").to_string().into(),
-        time_report_picker: make_time_report_picker(today, db_pool.0).await?,
+        time_report_picker: make_time_report_picker(today, db_pool).await?,
+        categories,
     })
 }
 
@@ -261,17 +275,13 @@ fn extract_new_time_report_items(
                 start_time: (*start_time).clone(),
                 end_time,
             },
-            (None, None, None) => break,
+            (_, None, None) => break,
             _ => return Err(anyhow!("Invalid list of items")),
         };
 
         result.push(item);
 
         i += 1;
-    }
-
-    if categories.len() != i as usize || start_times.len() != i as usize {
-        return Err(anyhow!("Invalid list of items"));
     }
 
     if end_times.keys().any(|value| *value >= i) {
@@ -362,7 +372,7 @@ fn make_time_report_items(
     offset: u16,
     add: u16,
 ) -> impl IntoIterator<Item = AddTimeReportItemTemplate> {
-    (offset..offset + add).map(|i| AddTimeReportItemTemplate { i })
+    (offset..offset + add).map(move |i| AddTimeReportItemTemplate { i })
 }
 
 #[derive(Debug, Deserialize)]
@@ -371,16 +381,20 @@ struct AddTimeReportItemsParams {
     add: u16,
 }
 
+struct GetCategoryNames {
+    name: Arc<str>,
+}
+
 async fn add_time_report_items(
     params: Query<AddTimeReportItemsParams>,
-) -> AddTimeReportExtraItemTemplate {
-    AddTimeReportExtraItemTemplate {
+) -> AppResult<AddTimeReportExtraItemTemplate> {
+    Ok(AddTimeReportExtraItemTemplate {
         items: make_time_report_items(params.offset, params.add)
             .into_iter()
             .collect(),
         offset: params.offset,
         add: params.add,
-    }
+    })
 }
 
 async fn add_time_report() -> AppResult<AddTimeReportTemplate> {

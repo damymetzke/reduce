@@ -24,6 +24,12 @@
   <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 </head>
 <body>
+    <datalist id="list-categories">
+      {% for category in categories %}
+      <option value="{{ category }}">{{ category }}</option>
+      {% endfor %}
+    </datalist>
+
     <h1>Reduce - Time report</h1>
 
     <button hx-get="/api/time-reports/add" hx-swap="outerHTML">
