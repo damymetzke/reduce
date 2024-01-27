@@ -96,7 +96,7 @@ struct TimeReportsTemplate {
 struct TimeReportItem {
     name: Box<str>,
     start_time: Box<str>,
-    end_time: Box<str>,
+    end_time: Option<String>,
 }
 
 async fn make_time_report_picker(
@@ -136,7 +136,7 @@ async fn make_time_report_picker(
                 )| {
                     let value = start_time.as_ref().into();
                     let start_time = convert_time(start_time.as_ref());
-                    let end_time = convert_time(end_time.as_ref());
+                    let end_time = end_time.map(|end_time| convert_time(end_time.as_ref())).unwrap_or(":".into());
 
                     TimeReportItemTemplate {
                         start_time,
@@ -202,7 +202,7 @@ async fn time_reports(
                 )| {
                     let value = start_time.as_ref().into();
                     let start_time = convert_time(start_time.as_ref());
-                    let end_time = convert_time(end_time.as_ref());
+                    let end_time = end_time.map(|end_time| convert_time(end_time.as_ref())).unwrap_or(":".into());
 
                     TimeReportItemTemplate {
                         start_time,
