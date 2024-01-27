@@ -33,6 +33,8 @@ use crate::{error::AppResult, IndexTemplate};
 struct TimeReportItemTemplate {
     start_time: Arc<str>,
     end_time: Arc<str>,
+    i: u16,
+    value: Arc<str>,
 }
 
 #[derive(Template)]
@@ -76,6 +78,12 @@ struct AddTimeReportTemplate {
 struct AddTimeReportResultTemplate;
 
 #[derive(Template)]
+#[template(path = "api/time-reports/delete_result.html", escape = "none")]
+struct DeleteTimeReportsResultTemplate {
+    num_deleted: u16,
+}
+
+#[derive(Template)]
 #[template(path = "time-reports.html", escape = "none")]
 struct TimeReportsTemplate {
     time_reports_today: Box<[TimeReportCategoryTemplate]>,
@@ -116,18 +124,25 @@ async fn make_time_report_picker(
         name,
         times: times
             .into_iter()
+            .enumerate()
             .map(
-                |TimeReportItem {
-                     start_time,
-                     end_time,
-                     ..
-                 }| {
+                |(
+                    i,
+                    TimeReportItem {
+                        start_time,
+                        end_time,
+                        ..
+                    },
+                )| {
+                    let value = start_time.as_ref().into();
                     let start_time = convert_time(start_time.as_ref());
                     let end_time = convert_time(end_time.as_ref());
 
                     TimeReportItemTemplate {
                         start_time,
                         end_time,
+                        i: i as u16,
+                        value,
                     }
                 },
             )
@@ -175,18 +190,25 @@ async fn time_reports(
         name,
         times: times
             .into_iter()
+            .enumerate()
             .map(
-                |TimeReportItem {
-                     start_time,
-                     end_time,
-                     ..
-                 }| {
+                |(
+                    i,
+                    TimeReportItem {
+                        start_time,
+                        end_time,
+                        ..
+                    },
+                )| {
+                    let value = start_time.as_ref().into();
                     let start_time = convert_time(start_time.as_ref());
                     let end_time = convert_time(end_time.as_ref());
 
                     TimeReportItemTemplate {
                         start_time,
                         end_time,
+                        i: i as u16,
+                        value,
                     }
                 },
             )
@@ -355,6 +377,26 @@ async fn create_time_report(
     Ok(AddTimeReportResultTemplate)
 }
 
+async fn delete_time_reports(
+    Extension(db_pool): Extension<Pool<Postgres>>,
+    Form(body): Form<HashMap<Arc<str>, Arc<str>>>,
+) -> AppResult<DeleteTimeReportsResultTemplate> {
+    let times_to_remove: Box<_> = body.values().map(ToString::to_string).collect();
+
+    let num_deleted = query! {
+        "
+        DELETE FROM time_entries
+        WHERE start_time = Any($1::text[])
+        ",
+        times_to_remove.as_ref()
+    }
+    .execute(&db_pool)
+    .await?
+    .rows_affected() as u16;
+
+    Ok(DeleteTimeReportsResultTemplate { num_deleted })
+}
+
 #[derive(Debug, Deserialize)]
 struct TimeReportPickerParams {
     date: Arc<str>,
@@ -417,7 +459,12 @@ async fn add_time_report() -> AppResult<AddTimeReportTemplate> {
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/time-reports", get(time_reports).post(create_time_report))
+        .route(
+            "/time-reports",
+            get(time_reports)
+                .post(create_time_report)
+                .delete(delete_time_reports),
+        )
         .route("/api/time-reports", get(time_report_picker))
         .route("/api/time-reports/add", get(add_time_report))
         .route("/api/time-reports/add/items", get(add_time_report_items))

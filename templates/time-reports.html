@@ -48,9 +48,12 @@
         hx-params="*"
         />
     </form>
-    <ul id="time-report-picker">
-      {{ time_report_picker }}
-    </ul>
+    <form>
+      <button hx-delete="/time-reports" hx-swap="outerHTML">Delete selected items</button>
+      <ul id="time-report-picker">
+        {{ time_report_picker }}
+      </ul>
+    </form>
 
     <footer>
       <p>

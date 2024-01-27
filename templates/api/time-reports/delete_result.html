@@ -16,6 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<p>
-  {{ start_time }} - {{ end_time }} <input type="checkbox" name="{{ i }}--select-item" value="{{ value }}"/>
-</p>
+<div id="delete-selected-reports">
+  <p>Deleted {{ num_deleted }} items!</p>
+  <button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
+</div>
