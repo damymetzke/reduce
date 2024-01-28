@@ -16,19 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<input
-  type="date"
-  value="{{ picker_date }}"
-  name="date"
-  hx-get="/api/time-reports"
-  hx-trigger="change"
-  hx-target="#time-report-picker"
-  hx-params="date"
-  />
+{% for item in reports %}
+  <li> {{ item }} </li>
+{% endfor %}
 
-<div id="delete-selected-reports">
-<button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
-</div>
-<ul id="time-report-picker">
-  {{ time_report_picker }}
-</ul>

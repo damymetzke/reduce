@@ -17,6 +17,19 @@
 #}
 
 <div id="add-time-report">
+  <form 
+    hx-get="/api/time-reports/schedule"
+    hx-trigger="load"
+    hx-target="#time-report"
+    hx-params="date"
+    hx-include="closest form"
+  >
+    <input
+      type="hidden"
+      name="date"
+      value="{{ date }}"
+    />
+  </form>
   <p>
     Time reports recorded!
   </p>

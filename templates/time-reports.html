@@ -37,23 +37,8 @@
     </button>
 
     <h2> Reports for: </h2>
-    <form>
-      <input
-        type="date"
-        value="{{ picker_date }}"
-        name="date"
-        hx-get="/api/time-reports"
-        hx-trigger="change"
-        hx-target="#time-report-picker"
-        hx-params="date"
-        />
-
-      <div id="delete-selected-reports">
-      <button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
-      </div>
-      <ul id="time-report-picker">
-        {{ time_report_picker }}
-      </ul>
+    <form id="time-report">
+      {{ time_reports }}
     </form>
 
     <footer>

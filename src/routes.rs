@@ -45,9 +45,16 @@ struct TimeReportCategoryTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "api/time-reports/index.html", escape = "none")]
+#[template(path = "api/time-reports/picker.html", escape = "none")]
 struct TimeReportPickerTemplate {
     reports: Box<[TimeReportCategoryTemplate]>,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/index.html", escape = "none")]
+struct TimeReportIndexTemplate {
+    time_report_picker: TimeReportPickerTemplate,
+    picker_date: Arc<str>,
 }
 
 #[derive(Template, Clone)]
@@ -75,7 +82,9 @@ struct AddTimeReportTemplate {
 
 #[derive(Template)]
 #[template(path = "api/time-reports/add/result.html", escape = "none")]
-struct AddTimeReportResultTemplate;
+struct AddTimeReportResultTemplate {
+    date: Arc<str>,
+}
 
 #[derive(Template)]
 #[template(path = "api/time-reports/delete_result.html", escape = "none")]
@@ -87,9 +96,8 @@ struct DeleteTimeReportsResultTemplate {
 #[template(path = "time-reports.html", escape = "none")]
 struct TimeReportsTemplate {
     time_reports_today: Box<[TimeReportCategoryTemplate]>,
-    picker_date: Arc<str>,
-    time_report_picker: TimeReportPickerTemplate,
     categories: Arc<[Arc<str>]>,
+    time_reports: TimeReportIndexTemplate,
 }
 
 #[derive(Debug)]
@@ -234,9 +242,11 @@ async fn time_reports(
 
     Ok(TimeReportsTemplate {
         time_reports_today,
-        picker_date: today.format("%Y-%m-%d").to_string().into(),
-        time_report_picker: make_time_report_picker(today, db_pool).await?,
         categories,
+        time_reports: TimeReportIndexTemplate {
+            time_report_picker: make_time_report_picker(today, db_pool).await?,
+            picker_date: today.format("%Y-%m-%d").to_string().into(),
+        },
     })
 }
 
@@ -463,7 +473,9 @@ async fn create_time_report(
         .await?;
     }
     transaction.commit().await?;
-    Ok(AddTimeReportResultTemplate)
+    Ok(AddTimeReportResultTemplate {
+        date: params.date.format("%Y-%m-%d").to_string().into(),
+    })
 }
 
 async fn delete_time_reports(
@@ -541,6 +553,22 @@ async fn add_time_report_items(
     })
 }
 
+#[derive(Debug, Deserialize)]
+struct GetTimeReportScheduleParams {
+    date: Arc<str>,
+}
+
+async fn get_time_report_schedule(
+    Extension(db_pool): Extension<Pool<Postgres>>,
+    Query(params): Query<GetTimeReportScheduleParams>,
+) -> AppResult<TimeReportIndexTemplate> {
+    let date = NaiveDate::parse_from_str(params.date.as_ref(), "%Y-%m-%d")?;
+    Ok(TimeReportIndexTemplate {
+        time_report_picker: make_time_report_picker(date, db_pool).await?,
+        picker_date: date.format("%Y-%m-%d").to_string().into(),
+    })
+}
+
 async fn add_time_report() -> AppResult<AddTimeReportTemplate> {
     Ok(AddTimeReportTemplate {
         date: Local::now()
@@ -570,4 +598,5 @@ pub fn register(router: Router) -> Router {
         .route("/api/time-reports", get(time_report_picker))
         .route("/api/time-reports/add", get(add_time_report))
         .route("/api/time-reports/add/items", get(add_time_report_items))
+        .route("/api/time-reports/schedule", get(get_time_report_schedule))
 }
