@@ -45,11 +45,12 @@
         hx-get="/api/time-reports"
         hx-trigger="change"
         hx-target="#time-report-picker"
-        hx-params="*"
+        hx-params="date"
         />
-    </form>
-    <form>
-      <button hx-delete="/time-reports" hx-swap="outerHTML">Delete selected items</button>
+
+      <div id="delete-selected-reports">
+      <button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
+      </div>
       <ul id="time-report-picker">
         {{ time_report_picker }}
       </ul>

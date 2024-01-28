@@ -17,6 +17,13 @@
 #}
 
 <div id="delete-selected-reports">
+  <div 
+    hx-get="/api/time-reports"
+    hx-trigger="load"
+    hx-target="#time-report-picker"
+    hx-params="date"
+    hx-include="closest form"
+  ></div>
   <p>Deleted {{ num_deleted }} items!</p>
   <button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
 </div>

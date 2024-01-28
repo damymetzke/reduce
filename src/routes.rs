@@ -471,16 +471,26 @@ async fn delete_time_reports(
     Form(body): Form<HashMap<Arc<str>, Arc<str>>>,
 ) -> AppResult<DeleteTimeReportsResultTemplate> {
     let times_to_remove: Box<_> = body
-        .values()
-        .map(|value| NaiveTime::parse_from_str(value, "%H:%M:%S"))
+        .iter()
+        .filter_map(|(key, value)| {
+            if key.ends_with("--select-item") {
+                Some(NaiveTime::parse_from_str(value, "%H:%M:%S"))
+            } else {
+                None
+            }
+        })
         .try_collect()?;
+
+    let date = body.get("date").ok_or(anyhow!("Missing date"))?;
+    let date = NaiveDate::parse_from_str(date, "%Y-%m-%d")?;
 
     let num_deleted = query! {
         "
         DELETE FROM time_entries
-        WHERE start_time = Any($1::TIME[])
+        WHERE start_time = Any($1::TIME[]) AND day = $2
         ",
-        times_to_remove.as_ref()
+        times_to_remove.as_ref(),
+        date
     }
     .execute(&db_pool)
     .await?
