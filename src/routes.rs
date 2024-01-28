@@ -16,15 +16,15 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, rc::Rc, sync::Arc};
 
 use anyhow::{anyhow, Result};
 use askama::Template;
 use axum::{extract::Query, routing::get, Extension, Form, Router};
-use chrono::{Local, NaiveDate};
+use chrono::{Local, NaiveDate, NaiveTime};
 use itertools::Itertools;
 use serde::Deserialize;
-use sqlx::{query, query_as, Pool, Postgres};
+use sqlx::{query, query_as, Executor, Pool, Postgres};
 
 use crate::{error::AppResult, IndexTemplate};
 
@@ -95,8 +95,8 @@ struct TimeReportsTemplate {
 #[derive(Debug)]
 struct TimeReportItem {
     name: Box<str>,
-    start_time: Box<str>,
-    end_time: Option<String>,
+    start_time: NaiveTime,
+    end_time: Option<NaiveTime>,
 }
 
 async fn make_time_report_picker(
@@ -134,9 +134,11 @@ async fn make_time_report_picker(
                         ..
                     },
                 )| {
-                    let value = start_time.as_ref().into();
-                    let start_time = convert_time(start_time.as_ref());
-                    let end_time = end_time.map(|end_time| convert_time(end_time.as_ref())).unwrap_or(":".into());
+                    let value = start_time.format("%H:%M:%S").to_string().into();
+                    let start_time = start_time.format("%H:%M").to_string().into();
+                    let end_time = end_time
+                        .map(|end_time| end_time.format("%H:%M").to_string().into())
+                        .unwrap_or("?".into());
 
                     TimeReportItemTemplate {
                         start_time,
@@ -200,9 +202,11 @@ async fn time_reports(
                         ..
                     },
                 )| {
-                    let value = start_time.as_ref().into();
-                    let start_time = convert_time(start_time.as_ref());
-                    let end_time = end_time.map(|end_time| convert_time(end_time.as_ref())).unwrap_or(":".into());
+                    let value = start_time.format("%H:%M:%S").to_string().into();
+                    let start_time = start_time.format("%H:%M").to_string().into();
+                    let end_time = end_time
+                        .map(|end_time| end_time.format("%H:%M").to_string().into())
+                        .unwrap_or("?".into());
 
                     TimeReportItemTemplate {
                         start_time,
@@ -236,7 +240,7 @@ async fn time_reports(
     })
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CreateTimeReportItem {
     category: Arc<str>,
     start_time: Arc<str>,
@@ -325,30 +329,83 @@ fn hash_map_to_create_time_report_params(
     Ok(CreateTimeReportParams { date, items })
 }
 
+fn parse_time(raw: &str) -> Result<NaiveTime> {
+    let parts: Rc<_> = raw.trim().split(':').collect();
+    let (hour, minute): (Rc<str>, Rc<str>) = match parts.as_ref() {
+        [hour, minute] if (hour.len() == 1 || hour.len() == 2) && minute.len() == 2 => {
+            ((*hour).into(), (*minute).into())
+        }
+        [full] if full.len() == 3 => ((*full)[0..1].into(), (*full)[1..2].into()),
+        [full] if full.len() == 4 => ((*full)[0..2].into(), (*full)[2..4].into()),
+        _ => return Err(anyhow!("Time string is improperly formatted")),
+    };
+
+    let hour = hour.parse()?;
+    let minute = minute.parse()?;
+
+    Ok(NaiveTime::from_hms_opt(hour, minute, 0)
+        .ok_or(anyhow!("Could not convert numbers to time"))?)
+}
+
+struct CreateTimeReportCollection {
+    categories: Box<[String]>,
+    start_times: Box<[NaiveTime]>,
+}
+
+fn extract_collections<T: Iterator<Item = CreateTimeReportItem>>(
+    value: T,
+) -> Result<CreateTimeReportCollection> {
+    let (left, right) = value.tee();
+    let categories: Box<_> = left.map(|value| value.category.to_string()).collect();
+    let start_times: Box<_> = right
+        .map(|value| parse_time(value.start_time.as_ref()))
+        .try_collect()?;
+
+    Ok(CreateTimeReportCollection {
+        categories,
+        start_times,
+    })
+}
+
 async fn create_time_report(
     Extension(db_pool): Extension<Pool<Postgres>>,
     Form(params): Form<HashMap<Arc<str>, Arc<str>>>,
 ) -> AppResult<AddTimeReportResultTemplate> {
     let params = hash_map_to_create_time_report_params(&params)?;
 
-    let categories: Box<_> = params
-        .items
-        .iter()
-        .map(|value| value.category.to_string())
-        .collect();
-    let start_times: Box<_> = params
-        .items
-        .iter()
-        .map(|value| value.start_time.to_string())
-        .collect();
-    let end_times: Box<_> = params
-        .items
-        .iter()
-        .map(|value| value.end_time.clone().unwrap_or(Arc::from("")).to_string())
-        .collect();
+    let mut with_end_times: Vec<_> = Default::default();
+    let mut without_end_times: Vec<_> = Default::default();
 
-    query! {
-        "
+    for item in params.items.as_ref() {
+        let category = item.category.to_string();
+        let start_time = parse_time(item.start_time.as_ref())?;
+
+        match item.end_time.clone() {
+            Some(end_time) => {
+                with_end_times.push((category, start_time, parse_time(end_time.as_ref())?))
+            }
+            None => without_end_times.push((category, start_time)),
+        }
+    }
+
+    let mut transaction = db_pool.begin().await?;
+
+    // With end times
+    {
+        let categories: Box<_> = with_end_times
+            .iter()
+            .map(|(value, _, _)| value.clone())
+            .collect();
+        let start_times: Box<_> = with_end_times
+            .iter()
+            .map(|(_, value, _)| value.clone())
+            .collect();
+        let end_times: Box<_> = with_end_times
+            .iter()
+            .map(|(_, _, value)| value.clone())
+            .collect();
+        query! {
+            "
             INSERT INTO time_entries (category_id, day, start_time, end_time)
             SELECT
                 tc.id AS category_id,
@@ -360,20 +417,52 @@ async fn create_time_report(
             RIGHT JOIN
                 unnest(
                     $2::VARCHAR[],
-                    $3::VARCHAR[],
-                    $4::VARCHAR[]
+                    $3::TIME[],
+                    $4::TIME[]
                 ) AS t(category_name, start_time, end_time)
             ON
                 tc.name = t.category_name
         ",
-        params.date,
-        categories.as_ref(),
-        start_times.as_ref(),
-        end_times.as_ref(),
+            params.date,
+            categories.as_ref(),
+            start_times.as_ref(),
+            end_times.as_ref(),
+        }
+        .execute(&mut *transaction)
+        .await?;
     }
-    .execute(&db_pool)
-    .await?;
-
+    // Without end times
+    {
+        let categories: Box<_> = without_end_times
+            .iter()
+            .map(|(value, _)| value.clone())
+            .collect();
+        let start_times: Box<_> = without_end_times.iter().map(|(_, value)| *value).collect();
+        query! {
+            "
+            INSERT INTO time_entries (category_id, day, start_time)
+            SELECT
+                tc.id AS category_id,
+                $1 AS day,
+                start_time AS start_time
+            FROM
+                time_categories tc
+            RIGHT JOIN
+                unnest(
+                    $2::VARCHAR[],
+                    $3::TIME[]
+                ) AS t(category_name, start_time)
+            ON
+                tc.name = t.category_name
+        ",
+            params.date,
+            categories.as_ref(),
+            start_times.as_ref(),
+        }
+        .execute(&mut *transaction)
+        .await?;
+    }
+    transaction.commit().await?;
     Ok(AddTimeReportResultTemplate)
 }
 
@@ -381,12 +470,15 @@ async fn delete_time_reports(
     Extension(db_pool): Extension<Pool<Postgres>>,
     Form(body): Form<HashMap<Arc<str>, Arc<str>>>,
 ) -> AppResult<DeleteTimeReportsResultTemplate> {
-    let times_to_remove: Box<_> = body.values().map(ToString::to_string).collect();
+    let times_to_remove: Box<_> = body
+        .values()
+        .map(|value| NaiveTime::parse_from_str(value, "%H:%M:%S"))
+        .try_collect()?;
 
     let num_deleted = query! {
         "
         DELETE FROM time_entries
-        WHERE start_time = Any($1::text[])
+        WHERE start_time = Any($1::TIME[])
         ",
         times_to_remove.as_ref()
     }

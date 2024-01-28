@@ -8,7 +8,7 @@ CREATE TABLE time_categories (
 CREATE TABLE time_entries (
     category_id INT REFERENCES time_categories(id) NOT NULL,
     day DATE NOT NULL,
-    start_time VARCHAR(4) NOT NULL,
-    end_time VARCHAR(4),
+    start_time TIME NOT NULL,
+    end_time TIME,
     PRIMARY KEY(day, start_time)
 );
