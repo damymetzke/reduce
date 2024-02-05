@@ -21,22 +21,18 @@ use std::{collections::HashMap, rc::Rc, sync::Arc};
 use anyhow::{anyhow, Result};
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::{
-    extract::Query,
-    http::{HeaderMap, HeaderName, HeaderValue},
-    routing::get,
-    Extension, Form, Router,
-};
+use axum::{extract::Query, http::HeaderMap, routing::get, Extension, Form, Router};
 use chrono::{Local, NaiveDate, NaiveTime};
 use itertools::Itertools;
 use serde::Deserialize;
-use sqlx::{query, query_as, Executor, Pool, Postgres};
+use sqlx::{query, query_as, Pool, Postgres};
 
 use crate::{error::AppResult, IndexTemplate};
 
 #[derive(Template)]
 #[template(path = "api/time-reports/list-item.html", escape = "none")]
 struct TimeReportItemTemplate {
+    category: Arc<str>,
     start_time: Arc<str>,
     end_time: Arc<str>,
     i: u16,
@@ -44,16 +40,9 @@ struct TimeReportItemTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "api/time-reports/list-category.html", escape = "none")]
-struct TimeReportCategoryTemplate {
-    name: String,
-    times: Box<[TimeReportItemTemplate]>,
-}
-
-#[derive(Template)]
 #[template(path = "api/time-reports/picker.html", escape = "none")]
 struct TimeReportPickerTemplate {
-    reports: Box<[TimeReportCategoryTemplate]>,
+    reports: Box<[TimeReportItemTemplate]>,
 }
 
 #[derive(Template)]
@@ -101,7 +90,6 @@ struct DeleteTimeReportsResultTemplate {
 #[derive(Template)]
 #[template(path = "time-reports.html", escape = "none")]
 struct TimeReportsTemplate {
-    time_reports_today: Box<[TimeReportCategoryTemplate]>,
     categories: Arc<[Arc<str>]>,
     time_reports: TimeReportIndexTemplate,
 }
@@ -132,38 +120,25 @@ async fn make_time_report_picker(
     .fetch_all(&db_pool)
     .await?
     .into_iter()
-    .group_by(|item| String::from(item.name.as_ref()))
-    .into_iter()
-    .map(|(name, times)| TimeReportCategoryTemplate {
-        name,
-        times: times
-            .into_iter()
-            .enumerate()
-            .map(
-                |(
-                    i,
-                    TimeReportItem {
-                        start_time,
-                        end_time,
-                        ..
-                    },
-                )| {
-                    let value = start_time.format("%H:%M:%S").to_string().into();
-                    let start_time = start_time.format("%H:%M").to_string().into();
-                    let end_time = end_time
-                        .map(|end_time| end_time.format("%H:%M").to_string().into())
-                        .unwrap_or("?".into());
-
-                    TimeReportItemTemplate {
-                        start_time,
-                        end_time,
-                        i: i as u16,
-                        value,
-                    }
-                },
-            )
-            .collect(),
-    })
+    .enumerate()
+    .map(
+        |(
+            i,
+            TimeReportItem {
+                name,
+                start_time,
+                end_time,
+            },
+        )| TimeReportItemTemplate {
+            category: name.into(),
+            start_time: start_time.format("%H:%M").to_string().into(),
+            end_time: end_time
+                .map(|end_time| end_time.format("%H:%M").to_string().into())
+                .unwrap_or("".into()),
+            i: i as u16,
+            value: start_time.format("%H:%M:%S").to_string().into(),
+        },
+    )
     .collect();
 
     Ok(TimeReportPickerTemplate {
@@ -185,55 +160,6 @@ fn convert_time(raw: &str) -> Arc<str> {
 async fn time_reports(
     Extension(db_pool): Extension<Pool<Postgres>>,
 ) -> AppResult<TimeReportsTemplate> {
-    let time_reports_today = query_as! {
-        TimeReportItem,
-        "
-            SELECT te.start_time, te.end_time, tc.name
-            FROM time_entries te
-            JOIN time_categories tc ON te.category_id = tc.id
-            WHERE te.day = $1
-            ORDER BY tc.name, te.start_time;
-        ",
-        Local::now().date_naive()
-
-    }
-    .fetch_all(&db_pool)
-    .await?
-    .into_iter()
-    .group_by(|item| String::from(item.name.as_ref()))
-    .into_iter()
-    .map(|(name, times)| TimeReportCategoryTemplate {
-        name,
-        times: times
-            .into_iter()
-            .enumerate()
-            .map(
-                |(
-                    i,
-                    TimeReportItem {
-                        start_time,
-                        end_time,
-                        ..
-                    },
-                )| {
-                    let value = start_time.format("%H:%M:%S").to_string().into();
-                    let start_time = start_time.format("%H:%M").to_string().into();
-                    let end_time = end_time
-                        .map(|end_time| end_time.format("%H:%M").to_string().into())
-                        .unwrap_or("?".into());
-
-                    TimeReportItemTemplate {
-                        start_time,
-                        end_time,
-                        i: i as u16,
-                        value,
-                    }
-                },
-            )
-            .collect(),
-    })
-    .collect();
-
     let categories = query_as! {
         GetCategoryNames,
         "SELECT name FROM time_categories ORDER BY name ASC"
@@ -247,7 +173,6 @@ async fn time_reports(
     let today = Local::now().date_naive();
 
     Ok(TimeReportsTemplate {
-        time_reports_today,
         categories,
         time_reports: TimeReportIndexTemplate {
             time_report_picker: make_time_report_picker(today, db_pool).await?,
@@ -359,8 +284,7 @@ fn parse_time(raw: &str) -> Result<NaiveTime> {
     let hour = hour.parse()?;
     let minute = minute.parse()?;
 
-    Ok(NaiveTime::from_hms_opt(hour, minute, 0)
-        .ok_or(anyhow!("Could not convert numbers to time"))?)
+    NaiveTime::from_hms_opt(hour, minute, 0).ok_or(anyhow!("Could not convert numbers to time"))
 }
 
 struct CreateTimeReportCollection {
@@ -412,14 +336,8 @@ async fn create_time_report(
             .iter()
             .map(|(value, _, _)| value.clone())
             .collect();
-        let start_times: Box<_> = with_end_times
-            .iter()
-            .map(|(_, value, _)| value.clone())
-            .collect();
-        let end_times: Box<_> = with_end_times
-            .iter()
-            .map(|(_, _, value)| value.clone())
-            .collect();
+        let start_times: Box<_> = with_end_times.iter().map(|(_, value, _)| *value).collect();
+        let end_times: Box<_> = with_end_times.iter().map(|(_, _, value)| *value).collect();
         query! {
             "
             INSERT INTO time_entries (category_id, day, start_time, end_time)

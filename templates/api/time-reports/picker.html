@@ -16,12 +16,16 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
+<tr>
+  <th class="p-2 text-lg border border-black font-bold">Category</th>
+  <th class="p-2 text-lg border border-black font-bold">Start time</th>
+  <th class="p-2 text-lg border border-black font-bold">End time</th>
+  <th class="p-2 text-lg border border-black font-bold">Select</th>
+</tr>
+
 {% for item in reports %}
-  <li class="
-      mt-12 mx-12
-    "
-  >
+  <tr>
     {{ item }}
-  </li>
+  </tr>
 {% endfor %}
 
