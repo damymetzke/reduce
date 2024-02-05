@@ -20,7 +20,13 @@ use std::{collections::HashMap, rc::Rc, sync::Arc};
 
 use anyhow::{anyhow, Result};
 use askama::Template;
-use axum::{extract::Query, routing::get, Extension, Form, Router};
+use askama_axum::IntoResponse;
+use axum::{
+    extract::Query,
+    http::{HeaderMap, HeaderName, HeaderValue},
+    routing::get,
+    Extension, Form, Router,
+};
 use chrono::{Local, NaiveDate, NaiveTime};
 use itertools::Itertools;
 use serde::Deserialize;
@@ -586,6 +592,16 @@ async fn add_time_report() -> AppResult<AddTimeReportTemplate> {
     })
 }
 
+async fn get_style() -> AppResult<impl IntoResponse> {
+    let mut headers = HeaderMap::new();
+    headers.insert("Content-type", "text/css".parse()?);
+
+    Ok((
+        headers,
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/static/style.css")),
+    ))
+}
+
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
@@ -599,4 +615,5 @@ pub fn register(router: Router) -> Router {
         .route("/api/time-reports/add", get(add_time_report))
         .route("/api/time-reports/add/items", get(add_time_report_items))
         .route("/api/time-reports/schedule", get(get_time_report_schedule))
+        .route("/static/style.css", get(get_style))
 }

@@ -22,6 +22,7 @@
   <meta charset="UTF-8">
   <title>Reduce</title>
   <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <datalist id="list-categories">
@@ -30,16 +31,37 @@
       {% endfor %}
     </datalist>
 
-    <h1>Reduce - Time report</h1>
+    <h1
+      class="text-center text-3xl underline font-bold"
+    >
+      Reduce - Time report
+    </h1>
 
-    <button hx-get="/api/time-reports/add" hx-swap="outerHTML">
-      Add reports
-    </button>
+    <div class="
+        flex flex-row
+        mt-12
+      ">
+      <button
+        hx-get="/api/time-reports/add"
+        hx-swap="outerHTML"
+        class="
+          mx-auto p-2 w-auto
+          border-2 rounded-md border-black
+          text-lg font-bold
+          bg-button-background-normal
+        "
+      >
+        Add reports
+      </button>
+    </div>
 
-    <h2> Reports for: </h2>
+    <hr class="background-black height-2 width-full mx-12 my-12">
+
     <form id="time-report">
       {{ time_reports }}
     </form>
+
+    <hr class="background-black height-2 width-full mx-12 my-12">
 
     <footer>
       <p>

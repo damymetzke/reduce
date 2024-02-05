@@ -16,10 +16,20 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<b>
+<b class="
+    ml-4 p-2 z-10
+    text-lg
+    border-l-2 border-r-2 border-t-2
+    border-black rounded-t-md
+    bg-button-background-normal
+  ">
   {{ name }}
 </b>
-<ol>
+<ol class="
+    border-2 border-black rounded-md
+    bg-button-background-normal
+    p-6
+  ">
   {% for item in times %}
   <li> {{item}} </li>
   {% endfor %}

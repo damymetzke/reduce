@@ -16,18 +16,41 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<input
-  type="date"
-  value="{{ picker_date }}"
-  name="date"
-  hx-get="/api/time-reports"
-  hx-trigger="change"
-  hx-target="#time-report-picker"
-  hx-params="date"
-  />
+<div class="
+    flex flex-row justify-center items-center gap-4
+  " >
+  <h2 class="text-2xl"> Reports for: </h2>
+  <input
+    type="date"
+    value="{{ picker_date }}"
+    name="date"
+    hx-get="/api/time-reports"
+    hx-trigger="change"
+    hx-target="#time-report-picker"
+    hx-params="date"
+    class="
+      p-2
+      bg-button-background-normal
+      border-2 border-black rounded-md
+      font-bold
+    "
+    />
+</div>
 
 <div id="delete-selected-reports">
-<button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
+<button
+    hx-delete="/time-reports"
+    hx-target="#delete-selected-reports"
+    hx-swap="outerHTML"
+    class="
+      p-2 ml-12
+      border-2 rounded-md border-black
+      text-lg font-bold
+      bg-button-background-normal
+    "
+  >
+    Delete selected
+  </button>
 </div>
 <ul id="time-report-picker">
   {{ time_report_picker }}

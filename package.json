@@ -1,0 +1,11 @@
+{
+  "name": "reduce",
+  "version": "1.0.0",
+  "scripts": {
+    "tailwind": "tailwindcss -i css/index.css -o static/style.css -w"
+  },
+  "private": true,
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}
