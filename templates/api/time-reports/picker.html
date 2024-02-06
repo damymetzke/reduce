@@ -16,6 +16,63 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
+<tr class="
+  border-b border-view-foreground-inactive
+  
+  bg-view-background-alternate
+  ">
+  <th class="
+      p-2
+      text-lg font-bold
+      border-l border-r border-view-foreground-inactive
+      first:border-l-0 last:border-r-0
+      ">
+      <div class="flex flex-row justify-between">
+        <span class="flex-1 text-center">
+          Category
+        </span>
+        <span class="
+          cursor-pointer select-none
+          ">
+          ○
+        </span>
+      </div>
+  </th>
+  <th class="
+      p-2
+      text-lg font-bold
+      border-l border-r border-view-foreground-inactive
+      first:border-l-0 last:border-r-0
+      ">
+      <div class="flex flex-row justify-between">
+        <span class="flex-1 text-center">
+          Start time
+        </span>
+        <span class="
+          cursor-pointer select-none
+          ">
+          ○
+        </span>
+      </div>
+  </th>
+  <th class="
+      p-2
+      text-lg font-bold
+      border-l border-r border-view-foreground-inactive
+      first:border-l-0 last:border-r-0
+      ">
+      End time
+  </th>
+  <th class="
+      p-2
+      text-lg font-bold
+      border-l border-r border-view-foreground-inactive
+      first:border-l-0 last:border-r-0
+      ">
+      Select
+  </th>
+</tr>
+
 {% for item in reports %}
   <tr class="bg-view-background-normal odd:bg-view-background-alternate">
     {{ item }}
