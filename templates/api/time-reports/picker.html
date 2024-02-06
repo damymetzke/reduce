@@ -16,15 +16,19 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<tr>
-  <th class="p-2 text-lg border border-black font-bold">Category</th>
-  <th class="p-2 text-lg border border-black font-bold">Start time</th>
-  <th class="p-2 text-lg border border-black font-bold">End time</th>
-  <th class="p-2 text-lg border border-black font-bold">Select</th>
+<tr class="
+  border-b border-view-foreground-inactive
+  
+  bg-view-background-alternate
+  ">
+  <th class="p-2 text-lg border-l border-r border-view-foreground-inactive font-bold first:border-l-0 last:border-r-0">Category</th>
+  <th class="p-2 text-lg border-l border-r border-view-foreground-inactive font-bold first:border-l-0 last:border-r-0">Start time</th>
+  <th class="p-2 text-lg border-l border-r border-view-foreground-inactive font-bold first:border-l-0 last:border-r-0">End time</th>
+  <th class="p-2 text-lg border-l border-r border-view-foreground-inactive font-bold first:border-l-0 last:border-r-0">Select</th>
 </tr>
 
 {% for item in reports %}
-  <tr>
+  <tr class="bg-view-background-normal odd:bg-view-background-alternate">
     {{ item }}
   </tr>
 {% endfor %}
