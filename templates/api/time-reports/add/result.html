@@ -30,10 +30,32 @@
       value="{{ date }}"
     />
   </form>
-  <p>
-    Time reports recorded!
-  </p>
-  <button hx-get="/api/time-reports/add" hx-swap="outerHTML" hx-target="#add-time-report">
+  <div class="
+      mx-12 my-8
+    ">
+    <span
+      class="
+      p-4
+      border-2 border-view-foreground-positive rounded-xl
+      bg-view-background-alternate
+      text-lg
+      "
+    >
+      Time reports recorded!
+    </span>
+  </div>
+  <button
+    hx-get="/api/time-reports/add"
+    hx-swap="outerHTML"
+    hx-target="#add-time-report"
+    class="
+    block
+    p-2 ml-12 my-4
+    border-2 rounded-md border-black
+    text-lg font-bold
+    bg-button-background-normal
+    "
+  >
     Add more reports
   </button>
 </div>

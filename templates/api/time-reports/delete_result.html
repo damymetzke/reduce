@@ -24,6 +24,34 @@
     hx-params="date"
     hx-include="closest form"
   ></div>
-  <p>Deleted {{ num_deleted }} items!</p>
-  <button hx-delete="/time-reports" hx-target="#delete-selected-reports" hx-swap="outerHTML">Delete selected items</button>
+
+  <div class="
+      mx-12 my-8
+    ">
+    <span
+      class="
+      p-4
+      border-2 border-view-foreground-positive rounded-xl
+      bg-view-background-alternate
+      text-lg
+      "
+    >
+      Deleted {{ num_deleted }} items!
+    </span>
+  </div>
+
+  <button
+    hx-delete="/time-reports"
+    hx-target="#delete-selected-reports"
+    hx-swap="outerHTML"
+    class="
+    block
+    p-2 ml-12 my-4
+    border-2 rounded-md border-black
+    text-lg font-bold
+    bg-button-background-normal
+    "
+  >
+    Delete selected items
+  </button>
 </div>
