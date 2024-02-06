@@ -16,28 +16,91 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<form id="add-time-report">
-  <label for="">Date</label>
-  <input type="date" name="date" value="{{ date }}">
+<form id="add-time-report" class="w-full">
+  <div class="flex flex-row justify-center items-center gap-4">
+    <label class="text-2xl" for="">Date</label>
+    <input class="
+      p-2
+      bg-button-background-normal
+      border-2 border-black rounded-md
+      font-bold
+      " type="date" name="date" value="{{ date }}">
+  </div>
 
-  <ul>
-    {% for item in items %}
-      <li>{{ item }}</li>
-    {% endfor %}
+  <div class="px-12 mt-12 w-full">
+    <table
+      class="
+      border border-view-decoration-focus
+      rounded-md
+      w-full
+      "
+    >
+      <tr class="
+        border-b border-view-foreground-inactive
+        
+        bg-view-background-alternate
+        ">
+        <th class="
+            p-2
+            text-lg font-bold
+            border-l border-r border-view-foreground-inactive
+            first:border-l-0 last:border-r-0
+            ">
+            Category
+        </th>
+        <th class="
+            p-2
+            text-lg font-bold
+            border-l border-r border-view-foreground-inactive
+            first:border-l-0 last:border-r-0
+            ">
+            Start time
+        </th>
+        <th class="
+            p-2
+            text-lg font-bold
+            border-l border-r border-view-foreground-inactive
+            first:border-l-0 last:border-r-0
+            ">
+            End time
+        </th>
+      </tr>
+      {% for item in items %}
+        <tr class="bg-view-background-normal odd:bg-view-background-alternate">{{ item }}</tr>
+      {% endfor %}
 
-    <li id="add-items-extra"></li>
-  </ul>
+      <tr id="add-items-extra"></tr>
+    </table>
+  </div>
   <button
     id="add-items-extra-button"
     hx-get="/api/time-reports/add/items?offset={{ offset }}&add={{ add }}"
     hx-swap="outerHTML"
     hx-target="#add-items-extra"
     hx-select-oob="#add-items-extra-button"
+    class="
+    block
+    p-2 ml-12 my-4
+    border-2 rounded-md border-black
+    text-lg font-bold
+    bg-button-background-normal
+    "
   >
     More items
   </button>
 
-  <button hx-post="/time-reports" hx-swap="outerHTML" hx-target="#add-time-report">
+  <button
+    hx-post="/time-reports"
+    hx-swap="outerHTML"
+    hx-target="#add-time-report"
+    class="
+    block
+    p-2 ml-12
+    border-2 rounded-md border-black
+    text-lg font-bold
+    bg-button-background-normal
+    "
+  >
     Submit
   </button>
 </form>

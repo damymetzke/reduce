@@ -17,17 +17,24 @@
 #}
 
 {% for item in items %}
-  <li>{{ item }}</li>
+  <tr class="bg-view-background-normal odd:bg-view-background-alternate">{{ item }}</tr>
 {% endfor %}
 
-<li id="add-items-extra"></li>
+<tr id="add-items-extra"></tr>
 
-<button
-  id="add-items-extra-button"
-  hx-get="/api/time-reports/add/items?offset={{ offset }}&add={{ add }}"
-  hx-swap="outerHTML"
-  hx-target="#add-items-extra"
-  hx-select-oob="#add-items-extra-button"
->
-  More items
-</button>
+  <button
+    id="add-items-extra-button"
+    hx-get="/api/time-reports/add/items?offset={{ offset }}&add={{ add }}"
+    hx-swap="outerHTML"
+    hx-target="#add-items-extra"
+    hx-select-oob="#add-items-extra-button"
+    class="
+    block
+    p-2 ml-12 my-4
+    border-2 rounded-md border-black
+    text-lg font-bold
+    bg-button-background-normal
+    "
+  >
+    More items
+  </button>
