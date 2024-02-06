@@ -157,7 +157,13 @@ fn convert_time(raw: &str) -> Arc<str> {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct TimeReportsParams {
+    date: Option<Arc<str>>,
+}
+
 async fn time_reports(
+    Query(params): Query<TimeReportsParams>,
     Extension(db_pool): Extension<Pool<Postgres>>,
 ) -> AppResult<TimeReportsTemplate> {
     let categories = query_as! {
@@ -170,13 +176,16 @@ async fn time_reports(
     .map(|value| value.name)
     .collect();
 
-    let today = Local::now().date_naive();
+    let date = params
+        .date
+        .and_then(|date| NaiveDate::parse_from_str(date.as_ref(), "%Y-%m-%d").ok())
+        .unwrap_or(Local::now().date_naive());
 
     Ok(TimeReportsTemplate {
         categories,
         time_reports: TimeReportIndexTemplate {
-            time_report_picker: make_time_report_picker(today, db_pool).await?,
-            picker_date: today.format("%Y-%m-%d").to_string().into(),
+            time_report_picker: make_time_report_picker(date, db_pool).await?,
+            picker_date: date.format("%Y-%m-%d").to_string().into(),
         },
     })
 }
@@ -443,9 +452,16 @@ struct TimeReportPickerParams {
 async fn time_report_picker(
     params: Query<TimeReportPickerParams>,
     db_pool: Extension<Pool<Postgres>>,
-) -> AppResult<TimeReportPickerTemplate> {
+) -> AppResult<impl IntoResponse> {
     let date = NaiveDate::parse_from_str(params.date.as_ref(), "%Y-%m-%d");
-    Ok(make_time_report_picker(date?, db_pool.0).await?)
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "HX-Location",
+        format!("/time-reports?date={}", params.date).parse()?,
+    );
+
+    Ok((headers, make_time_report_picker(date?, db_pool.0).await?))
 }
 
 fn make_time_report_items(
