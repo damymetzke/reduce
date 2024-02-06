@@ -457,7 +457,7 @@ async fn time_report_picker(
 
     let mut headers = HeaderMap::new();
     headers.insert(
-        "HX-Location",
+        "HX-Push-Url",
         format!("/time-reports?date={}", params.date).parse()?,
     );
 
