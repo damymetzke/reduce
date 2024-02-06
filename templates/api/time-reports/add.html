@@ -25,10 +25,18 @@
       <li>{{ item }}</li>
     {% endfor %}
 
-    <li id="add-items-extra">
-      <button hx-get="/api/time-reports/add/items?offset={{ offset }}&add={{ add }}" hx-swap="outerHTML" hx-target="#add-items-extra">More items</button>
-    </li>
+    <li id="add-items-extra"></li>
   </ul>
+  <button
+    id="add-items-extra-button"
+    hx-get="/api/time-reports/add/items?offset={{ offset }}&add={{ add }}"
+    hx-swap="outerHTML"
+    hx-target="#add-items-extra"
+    hx-select-oob="#add-items-extra-button"
+  >
+    More items
+  </button>
+
   <button hx-post="/time-reports" hx-swap="outerHTML" hx-target="#add-time-report">
     Submit
   </button>

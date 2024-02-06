@@ -488,7 +488,7 @@ async fn add_time_report_items(
         items: make_time_report_items(params.offset, params.add)
             .into_iter()
             .collect(),
-        offset: params.offset,
+        offset: params.offset + params.add,
         add: params.add,
     })
 }
