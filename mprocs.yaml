@@ -1,0 +1,9 @@
+procs:
+  docker:
+    cmd: ["docker", "compose", "up"]
+  tailwind:
+    cmd: ["npm", "run", "tailwind"]
+  server:
+    cmd: ["cargo", "watch", "-x", "r"]
+  clippy:
+    cmd: ["cargo", "watch", "-x", "clippy"]

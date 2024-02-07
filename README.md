@@ -12,7 +12,7 @@ To understand how to use Reduce, you should understand its 2 primary goals. The 
 simplicity. Simplicity really entails 2 things. One of which is simplicity in technology. Reduce is
 built using a server-first architecture, using HTMX sparingly where appropriate. This means the
 resulting system is much more robust, reducing bugs, security issues, and maintainment cost. Another
-way reduce is simple is in how you use it. Data has limited scope in what it can store. The same
+way Reduce is simple is in how you use it. Data has limited scope in what it can store. The same
 data is simple, such that it can creatively be used for multiple use cases. Reduce won't do much
 without your knowledge. Beyond internal backups, it won't change anything until you take some
 action. This means you won't have to worry about what happens when you're not looking. Because of
@@ -27,34 +27,69 @@ traditional notifications exist as those can also be read. This does mean that t
 based. In other words, it is a requirement that the user periodically check the tool if they don't
 want to miss time-based constraints.
 
+> [!CAUTION]
+> Reduce is in a development version. Absolutely no reasonable security processes are in place. Run
+> at your own risk.
+
 ## Quick setup
 
 Before working on Reduce, a few prerequisites are required. Make sure you have installed the
 following:
 
 - The Rust tool chain and Cargo[^irust]
+- sqlx-cli[^isqlxcli]
 - Docker[^idocker]
+- Node.js[^inode]
 
-Before development, run the following command:
+While not strictly required, the following programs are recommended for use during development:
+
+- cargo-watch[^icargowatch]
+- mprocs[^improcs]
+
+It's recommended to run the project using mprocs:
+
+```bash
+mprocs
+```
+
+This will start all required programs within a single terminal window. Please reference
+mprocs itself for further information about how to interact with the multiple windows.
+
+If you prefer to manually manage the processes, you should make sure to run the following commands in separate sessions:
 
 ```bash
 docker compose up
+npm run tailwind
+# Run cargo directly, requires manual restarting
+cargo r
+# Use cargo-watch for automatic restarts
+cargo watch -x r
 ```
 
-This will start 2 docker containers:
+> [!NOTE]
+> This doesn't include clippy, which you may want to run manually.
 
-- A Postgres server exposed on port 5432. It comes with a default database called "reduce_dev".
-- An Adminer server, which can be used to directly view the database. You can access it in the
-  browser at "localhost:8080".
-
-The Postgres container is required for the compilation to work, as SQLx uses the database at
-compile time to validate queries. After that run the following command to run the server:
+There is one more step required before the build will succeed. For that run the following command:
 
 ```bash
-cargo run
+sqlx migrate run
 ```
 
-You can now access the server at "localhost:3000".
+This will run migrations, which is required for the build process to succeed.
+
+The 3 commands are all required to run the project as a whole. Docker compose is used for the
+database. This will run 2 containers, one is a Postgres database, the other is an adminer instance.
+The latter can be used to manually inspect the database, and can be accessed on port 8080. Note that
+this is purely meant for development. The credentials for the database in development mode are
+"user" and "password".
+
+The tailwind command in npm is used to watch changes in the `templates/` directory, and then
+rebuild the resulting css file which is then served from within the application.
+
+Cargo r runs the server itself. It requires that the database is online, As mentioned already, SQLx
+uses the actual database connection during compilation. If you reset the database, make sure to run
+`sqlx migrate run` again. The CSS is compiled into the binary itself, so you also need to compile
+the tailwind css sheet.
 
 ## Deployment
 
@@ -92,4 +127,8 @@ deployment server. Migrations are embedded in the binary, and work automatically
 setup any tables manually.
 
 [^irust]: <https://www.rust-lang.org/tools/install>
+[^isqlxcli]: <https://lib.rs/crates/sqlx-cli>
 [^idocker]: <https://docs.docker.com/get-docker/>
+[^inode]: <https://docs.docker.com/get-docker/>
+[^icargowatch]: <https://github.com/watchexec/cargo-watch>
+[^improcs]: <https://github.com/pvolok/mprocs>
