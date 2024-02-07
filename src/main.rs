@@ -18,6 +18,7 @@
 
 mod error;
 mod routes;
+mod subsystem;
 
 use std::error::Error;
 
@@ -44,6 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&db_pool).await?;
 
     let app = Router::new();
+    let app = app.nest("/new/time-reports", subsystem::time_report::routes());
 
     let app = routes::register(app).layer(Extension(db_pool));
 
