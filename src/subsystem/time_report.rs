@@ -18,19 +18,12 @@
 
 use axum::{routing::get, Router};
 
-use self::handler::{
-    delete_index, get_add_extra, get_add_form, get_index, get_picker, get_schedule, post_index,
-};
+use self::handler::{delete_index, get_index, post_index};
 
 mod database;
 mod handler;
 mod template;
 
 pub fn routes() -> Router {
-    Router::new()
-        .route("/", get(get_index).post(post_index).delete(delete_index))
-        .route("/picker", get(get_picker))
-        .route("/add", get(get_add_form))
-        .route("/add/extra", get(get_add_extra))
-        .route("/schedule", get(get_schedule))
+    Router::new().route("/", get(get_index).post(post_index).delete(delete_index))
 }

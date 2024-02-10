@@ -20,7 +20,24 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use chrono::{NaiveDate, NaiveTime};
-use sqlx::{query_as, Executor, Postgres};
+use sqlx::{query, query_as, Executor, Postgres};
+
+#[derive(Debug)]
+pub struct CategoryNameDTO {
+    pub name: Arc<str>,
+}
+
+pub async fn fetch_category_names<'a, T: Executor<'a, Database = Postgres>>(
+    executor: T,
+) -> Result<Arc<[CategoryNameDTO]>> {
+    Ok(query_as! {
+        CategoryNameDTO,
+        "SELECT name FROM time_categories ORDER BY name ASC"
+    }
+    .fetch_all(executor)
+    .await?
+    .into())
+}
 
 #[derive(Debug)]
 pub struct TimeReportItemDTO {
@@ -48,4 +65,90 @@ pub async fn fetch_time_report_items<'a, T: Executor<'a, Database = Postgres>>(
     .fetch_all(executor)
     .await?
     .into())
+}
+
+pub async fn insert_time_entries_without_end_times<'a, T: Executor<'a, Database = Postgres>>(
+    executor: T,
+    date: &NaiveDate,
+    categories: &[String],
+    start_times: &[NaiveTime],
+) -> Result<u64> {
+    Ok(query! {
+        "
+            INSERT INTO time_entries (category_id, day, start_time)
+            SELECT
+                tc.id AS category_id,
+                $1 AS day,
+                start_time AS start_time
+            FROM
+                time_categories tc
+            RIGHT JOIN
+                unnest(
+                    $2::VARCHAR[],
+                    $3::TIME[]
+                ) AS t(category_name, start_time)
+            ON
+                tc.name = t.category_name
+        ",
+        date,
+        categories,
+        start_times,
+    }
+    .execute(executor)
+    .await?
+    .rows_affected())
+}
+
+pub async fn insert_time_entries_with_end_times<'a, T: Executor<'a, Database = Postgres>>(
+    executor: T,
+    date: &NaiveDate,
+    categories: &[String],
+    start_times: &[NaiveTime],
+    end_times: &[NaiveTime],
+) -> Result<u64> {
+    Ok(query! {
+        "
+            INSERT INTO time_entries (category_id, day, start_time, end_time)
+            SELECT
+                tc.id AS category_id,
+                $1 AS day,
+                start_time AS start_time,
+                end_time AS end_time
+            FROM
+                time_categories tc
+            RIGHT JOIN
+                unnest(
+                    $2::VARCHAR[],
+                    $3::TIME[],
+                    $4::TIME[]
+                ) AS t(category_name, start_time, end_time)
+            ON
+                tc.name = t.category_name
+        ",
+        date,
+        categories,
+        start_times,
+        end_times,
+    }
+    .execute(executor)
+    .await?
+    .rows_affected())
+}
+
+pub async fn delete_time_entries<'a, T: Executor<'a, Database = Postgres>>(
+    executor: T,
+    date: &NaiveDate,
+    times_to_remove: &[NaiveTime],
+) -> Result<u64> {
+    Ok(query! {
+        "
+        DELETE FROM time_entries
+        WHERE start_time = Any($1::TIME[]) AND day = $2
+        ",
+        times_to_remove,
+        date
+    }
+    .execute(executor)
+    .await?
+    .rows_affected())
 }

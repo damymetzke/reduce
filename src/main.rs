@@ -34,7 +34,7 @@ struct IndexTemplate;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let tracing_subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::WARN)
+        .with_max_level(Level::TRACE)
         .finish();
 
     tracing::subscriber::set_global_default(tracing_subscriber)?;
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&db_pool).await?;
 
     let app = Router::new();
-    let app = app.nest("/new/time-reports", subsystem::time_report::routes());
+    let app = app.nest("/time-reports", subsystem::time_report::routes());
 
     let app = routes::register(app).layer(Extension(db_pool));
 

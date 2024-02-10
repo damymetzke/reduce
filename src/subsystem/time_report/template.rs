@@ -16,7 +16,7 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use std::borrow::Borrow;
+use std::{borrow::Borrow, sync::Arc};
 
 use askama::Template;
 
@@ -41,7 +41,7 @@ pub struct TimeReportPickerTemplate {
 #[derive(Template)]
 #[template(path = "time-reports.html", escape = "none")]
 pub struct TimeReportsTemplate {
-    pub categories: Box<[Box<str>]>,
+    pub categories: Box<[Arc<str>]>,
     pub time_reports: TimeReportIndexTemplate,
 }
 
@@ -50,6 +50,19 @@ pub struct TimeReportsTemplate {
 pub struct TimeReportIndexTemplate {
     pub time_report_picker: TimeReportPickerTemplate,
     pub picker_date: Box<str>,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/add/result.html", escape = "none")]
+pub struct TimeReportInsertResultTemplate {
+    pub date: Arc<str>,
+    pub num_insertions: u64,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/delete_result.html", escape = "none")]
+pub struct TimeReportDeleteResultTemplate {
+    pub num_deleted: u64,
 }
 
 impl<T> From<(u16, T)> for TimeReportItemTemplate
