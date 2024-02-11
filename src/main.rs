@@ -20,11 +20,11 @@ mod error;
 mod routes;
 mod subsystem;
 
-use std::error::Error;
+use std::{env, error::Error};
 
 use askama::Template;
 use axum::{Extension, Router};
-use tracing::Level;
+use tracing::{warn, Level, Subscriber};
 use tracing_subscriber::FmtSubscriber;
 
 #[derive(Template)]
@@ -33,9 +33,30 @@ struct IndexTemplate;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let tracing_subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
-        .finish();
+    let is_production = matches!(env::var("ENVIRONMENT").as_deref(), Ok("production"));
+    dbg!(is_production);
+
+    let mut _guard = None;
+    let tracing_subscriber: Box<dyn Subscriber + Send + Sync + 'static> =
+        match env::var("LOG_DIRECTORY") {
+            Ok(log_directory) if is_production => {
+                let file_appender = tracing_appender::rolling::daily(log_directory, "reduce.json");
+                let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+                _guard = Some(guard);
+                Box::from(
+                    tracing_subscriber::fmt()
+                        .json()
+                        .with_writer(non_blocking)
+                        .with_max_level(Level::TRACE)
+                        .finish(),
+                )
+            }
+            _ => Box::from(
+                FmtSubscriber::builder()
+                    .with_max_level(Level::TRACE)
+                    .finish(),
+            ),
+        };
 
     tracing::subscriber::set_global_default(tracing_subscriber)?;
 
