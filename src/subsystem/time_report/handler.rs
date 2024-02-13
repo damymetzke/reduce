@@ -18,8 +18,10 @@
 
 pub mod params;
 
+use std::sync::Arc;
+
 use askama_axum::IntoResponse;
-use axum::{extract::Query, Extension, Form};
+use axum::{extract::Query, http::HeaderMap, Extension, Form};
 use chrono::{Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
@@ -165,4 +167,27 @@ pub async fn delete_index(
     let num_deleted = delete_time_entries(&pool, &body.date, body.selected_times.as_ref()).await?;
 
     Ok(TimeReportDeleteResultTemplate { num_deleted })
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TimeReportPickerParams {
+    date: Arc<str>,
+}
+
+pub async fn get_picker(
+    params: Query<TimeReportPickerParams>,
+    Extension(pool): Extension<Pool<Postgres>>,
+) -> AppResult<impl IntoResponse> {
+    let date = NaiveDate::parse_from_str(params.date.as_ref(), "%Y-%m-%d")?;
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "HX-Push-Url",
+        format!("/time-reports?date={}", params.date).parse()?,
+    );
+
+    let picker: TimeReportPickerTemplate =
+        fetch_time_report_items(&pool, &date).await?.as_ref().into();
+
+    Ok((headers, picker))
 }

@@ -90,3 +90,19 @@ where
         }
     }
 }
+
+impl<T, U> From<T> for TimeReportPickerTemplate
+where
+    T: IntoIterator<Item = U>,
+    (u16, U): Into<TimeReportItemTemplate>,
+{
+    fn from(value: T) -> Self {
+        TimeReportPickerTemplate {
+            reports: value
+                .into_iter()
+                .enumerate()
+                .map(|(i, item)| (i as u16, item).into())
+                .collect(),
+        }
+    }
+}

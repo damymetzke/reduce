@@ -149,26 +149,6 @@ async fn index() -> IndexTemplate {
     IndexTemplate
 }
 
-#[derive(Debug, Deserialize)]
-struct TimeReportPickerParams {
-    date: Arc<str>,
-}
-
-async fn time_report_picker(
-    params: Query<TimeReportPickerParams>,
-    db_pool: Extension<Pool<Postgres>>,
-) -> AppResult<impl IntoResponse> {
-    let date = NaiveDate::parse_from_str(params.date.as_ref(), "%Y-%m-%d");
-
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        "HX-Push-Url",
-        format!("/time-reports?date={}", params.date).parse()?,
-    );
-
-    Ok((headers, make_time_report_picker(date?, db_pool.0).await?))
-}
-
 fn make_time_report_items(
     offset: u16,
     add: u16,
@@ -240,7 +220,6 @@ async fn get_style() -> AppResult<impl IntoResponse> {
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/api/time-reports", get(time_report_picker))
         .route("/api/time-reports/add", get(add_time_report))
         .route("/api/time-reports/add/items", get(add_time_report_items))
         .route("/api/time-reports/schedule", get(get_time_report_schedule))

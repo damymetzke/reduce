@@ -24,7 +24,7 @@ use std::{env, error::Error};
 
 use askama::Template;
 use axum::{Extension, Router};
-use tracing::{warn, Level, Subscriber};
+use tracing::{Level, Subscriber};
 use tracing_subscriber::FmtSubscriber;
 
 #[derive(Template)]
