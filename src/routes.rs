@@ -220,8 +220,8 @@ async fn get_style() -> AppResult<impl IntoResponse> {
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/api/time-reports/add", get(add_time_report))
-        .route("/api/time-reports/add/items", get(add_time_report_items))
-        .route("/api/time-reports/schedule", get(get_time_report_schedule))
+        .route("/time-reports/add", get(add_time_report))
+        .route("/time-reports/add/items", get(add_time_report_items))
+        .route("/time-reports/schedule", get(get_time_report_schedule))
         .route("/static/style.css", get(get_style))
 }

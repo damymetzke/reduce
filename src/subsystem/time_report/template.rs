@@ -71,15 +71,11 @@ where
 {
     fn from((i, item): (u16, T)) -> Self {
         let item = item.borrow();
-        let (end_time, value) = item
+        let end_time = item
             .end_time
-            .map(|end_time| {
-                (
-                    end_time.format("%H:%M").to_string().into(),
-                    end_time.format("%H:%M:%S").to_string().into(),
-                )
-            })
-            .unwrap_or(("".into(), "".into()));
+            .map(|end_time| end_time.format("%H:%M").to_string().into())
+            .unwrap_or("".into());
+        let value = item.start_time.format("%H:%M:%S").to_string().into();
 
         TimeReportItemTemplate {
             category: item.name.clone(),

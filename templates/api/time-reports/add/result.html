@@ -18,7 +18,7 @@
 
 <div id="add-time-report">
   <form 
-    hx-get="/api/time-reports/schedule"
+    hx-get="/time-reports/schedule"
     hx-trigger="load"
     hx-target="#time-report"
     hx-params="date"
@@ -45,7 +45,7 @@
     </span>
   </div>
   <button
-    hx-get="/api/time-reports/add"
+    hx-get="/time-reports/add"
     hx-swap="outerHTML"
     hx-target="#add-time-report"
     class="
