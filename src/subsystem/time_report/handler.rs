@@ -45,8 +45,8 @@ use self::params::{DeleteIndexParams, PostIndexParams};
 use super::{
     database::{delete_time_entries, fetch_category_names},
     template::{
-        AddTimeReportTemplate, TimeReportDeleteResultTemplate, TimeReportIndexTemplate,
-        TimeReportPickerTemplate, TimeReportsTemplate, AddTimeReportExtraItemTemplate,
+        AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate,
+        TimeReportIndexTemplate, TimeReportPickerTemplate, TimeReportsTemplate,
     },
 };
 
@@ -217,4 +217,28 @@ pub async fn get_add_items(
         params.offset,
         params.add,
     ))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetTimeReportScheduleParams {
+    date: Arc<str>,
+}
+
+pub async fn get_schedule(
+    Extension(pool): Extension<Pool<Postgres>>,
+    Query(params): Query<GetTimeReportScheduleParams>,
+) -> AppResult<impl IntoResponse> {
+    let date = NaiveDate::parse_from_str(params.date.as_ref(), "%Y-%m-%d")?;
+    let reports = fetch_time_report_items(&pool, &date).await?;
+
+    Ok(TimeReportIndexTemplate {
+        time_report_picker: TimeReportPickerTemplate {
+            reports: reports
+                .iter()
+                .enumerate()
+                .map(|(i, report)| (i as u16, report).into())
+                .collect(),
+        },
+        picker_date: date.format("%Y-%m-%d").to_string().into(),
+    })
 }
