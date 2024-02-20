@@ -45,8 +45,8 @@ use self::params::{DeleteIndexParams, PostIndexParams};
 use super::{
     database::{delete_time_entries, fetch_category_names},
     template::{
-        TimeReportDeleteResultTemplate, TimeReportIndexTemplate, TimeReportPickerTemplate,
-        TimeReportsTemplate, AddTimeReportTemplate,
+        AddTimeReportTemplate, TimeReportDeleteResultTemplate, TimeReportIndexTemplate,
+        TimeReportPickerTemplate, TimeReportsTemplate, AddTimeReportExtraItemTemplate,
     },
 };
 
@@ -199,8 +199,22 @@ pub async fn get_add() -> AppResult<impl IntoResponse> {
             .format("%Y-%m-%d")
             .to_string()
             .into(),
-        0..5,
+        0,
         5,
-        5,
+    ))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddTimeReportItemsParams {
+    offset: u16,
+    add: u16,
+}
+
+pub async fn get_add_items(
+    Query(params): Query<AddTimeReportItemsParams>,
+) -> AppResult<impl IntoResponse> {
+    Ok(AddTimeReportExtraItemTemplate::new(
+        params.offset,
+        params.add,
     ))
 }

@@ -18,7 +18,7 @@
 
 use axum::{routing::get, Router};
 
-use self::handler::{delete_index, get_index, get_picker, post_index, get_add};
+use self::handler::{delete_index, get_index, get_picker, post_index, get_add, get_add_items};
 
 mod database;
 mod handler;
@@ -29,4 +29,5 @@ pub fn routes() -> Router {
         .route("/", get(get_index).post(post_index).delete(delete_index))
         .route("/picker", get(get_picker))
         .route("/add", get(get_add))
+        .route("/add/items", get(get_add_items))
 }

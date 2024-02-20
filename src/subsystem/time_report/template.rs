@@ -80,6 +80,14 @@ pub struct AddTimeReportTemplate {
     pub add: u16,
 }
 
+#[derive(Template, Clone)]
+#[template(path = "api/time-reports/add/extra.html", escape = "none")]
+pub struct AddTimeReportExtraItemTemplate {
+    items: Arc<[AddTimeReportItemTemplate]>,
+    offset: u16,
+    add: u16,
+}
+
 impl<T> From<(u16, T)> for TimeReportItemTemplate
 where
     T: Borrow<TimeReportItemDTO>,
@@ -119,17 +127,27 @@ where
 }
 
 impl AddTimeReportTemplate {
-    pub fn new<T>(date: Arc<str>, items: T, offset: u16, add: u16) -> Self
-    where
-        T: IntoIterator<Item = u16>,
+    pub fn new(date: Arc<str>, offset: u16, add: u16) -> Self
     {
         AddTimeReportTemplate {
             date,
-            items: items
-                .into_iter()
+            items: (offset..offset + add)
                 .map(|i| AddTimeReportItemTemplate { i })
                 .collect(),
-            offset,
+            offset: offset + add,
+            add,
+        }
+    }
+}
+
+impl AddTimeReportExtraItemTemplate {
+    pub fn new(offset: u16, add: u16) -> Self
+    {
+        AddTimeReportExtraItemTemplate {
+            items: (offset..offset + add)
+                .map(|i| AddTimeReportItemTemplate { i })
+                .collect(),
+            offset: offset + add,
             add,
         }
     }

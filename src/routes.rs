@@ -149,31 +149,6 @@ async fn index() -> IndexTemplate {
     IndexTemplate
 }
 
-fn make_time_report_items(
-    offset: u16,
-    add: u16,
-) -> impl IntoIterator<Item = AddTimeReportItemTemplate> {
-    (offset..offset + add).map(move |i| AddTimeReportItemTemplate { i })
-}
-
-#[derive(Debug, Deserialize)]
-struct AddTimeReportItemsParams {
-    offset: u16,
-    add: u16,
-}
-
-async fn add_time_report_items(
-    params: Query<AddTimeReportItemsParams>,
-) -> AppResult<AddTimeReportExtraItemTemplate> {
-    Ok(AddTimeReportExtraItemTemplate {
-        items: make_time_report_items(params.offset, params.add)
-            .into_iter()
-            .collect(),
-        offset: params.offset + params.add,
-        add: params.add,
-    })
-}
-
 #[derive(Debug, Deserialize)]
 struct GetTimeReportScheduleParams {
     date: Arc<str>,
@@ -203,7 +178,6 @@ async fn get_style() -> AppResult<impl IntoResponse> {
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/time-reports/add/items", get(add_time_report_items))
         .route("/time-reports/schedule", get(get_time_report_schedule))
         .route("/static/style.css", get(get_style))
 }
