@@ -22,7 +22,7 @@ use anyhow::Result;
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::{extract::Query, http::HeaderMap, routing::get, Extension, Router};
-use chrono::{Local, NaiveDate, NaiveTime};
+use chrono::{NaiveDate, NaiveTime};
 use serde::Deserialize;
 use sqlx::{query_as, Pool, Postgres};
 
@@ -190,23 +190,6 @@ async fn get_time_report_schedule(
     })
 }
 
-async fn add_time_report() -> AppResult<AddTimeReportTemplate> {
-    Ok(AddTimeReportTemplate {
-        date: Local::now()
-            .date_naive()
-            .format("%Y-%m-%d")
-            .to_string()
-            .into(),
-        items: make_time_report_items(0, 5)
-            .into_iter()
-            .collect::<Vec<_>>()
-            .as_slice()
-            .into(),
-        offset: 5,
-        add: 5,
-    })
-}
-
 async fn get_style() -> AppResult<impl IntoResponse> {
     let mut headers = HeaderMap::new();
     headers.insert("Content-type", "text/css".parse()?);
@@ -220,7 +203,6 @@ async fn get_style() -> AppResult<impl IntoResponse> {
 pub fn register(router: Router) -> Router {
     router
         .route("/", get(|| async move { index().await }))
-        .route("/time-reports/add", get(add_time_report))
         .route("/time-reports/add/items", get(add_time_report_items))
         .route("/time-reports/schedule", get(get_time_report_schedule))
         .route("/static/style.css", get(get_style))

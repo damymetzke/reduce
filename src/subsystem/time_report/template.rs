@@ -65,6 +65,21 @@ pub struct TimeReportDeleteResultTemplate {
     pub num_deleted: u64,
 }
 
+#[derive(Template, Clone)]
+#[template(path = "api/time-reports/add/item.html", escape = "none")]
+pub struct AddTimeReportItemTemplate {
+    pub i: u16,
+}
+
+#[derive(Template)]
+#[template(path = "api/time-reports/add.html", escape = "none")]
+pub struct AddTimeReportTemplate {
+    pub date: Arc<str>,
+    pub items: Arc<[AddTimeReportItemTemplate]>,
+    pub offset: u16,
+    pub add: u16,
+}
+
 impl<T> From<(u16, T)> for TimeReportItemTemplate
 where
     T: Borrow<TimeReportItemDTO>,
@@ -99,6 +114,23 @@ where
                 .enumerate()
                 .map(|(i, item)| (i as u16, item).into())
                 .collect(),
+        }
+    }
+}
+
+impl AddTimeReportTemplate {
+    pub fn new<T>(date: Arc<str>, items: T, offset: u16, add: u16) -> Self
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        AddTimeReportTemplate {
+            date,
+            items: items
+                .into_iter()
+                .map(|i| AddTimeReportItemTemplate { i })
+                .collect(),
+            offset,
+            add,
         }
     }
 }

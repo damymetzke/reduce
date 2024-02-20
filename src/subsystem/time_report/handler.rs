@@ -46,7 +46,7 @@ use super::{
     database::{delete_time_entries, fetch_category_names},
     template::{
         TimeReportDeleteResultTemplate, TimeReportIndexTemplate, TimeReportPickerTemplate,
-        TimeReportsTemplate,
+        TimeReportsTemplate, AddTimeReportTemplate,
     },
 };
 
@@ -190,4 +190,17 @@ pub async fn get_picker(
         fetch_time_report_items(&pool, &date).await?.as_ref().into();
 
     Ok((headers, picker))
+}
+
+pub async fn get_add() -> AppResult<impl IntoResponse> {
+    Ok(AddTimeReportTemplate::new(
+        Local::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string()
+            .into(),
+        0..5,
+        5,
+        5,
+    ))
 }
