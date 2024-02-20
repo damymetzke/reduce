@@ -18,7 +18,9 @@
 
 use axum::{routing::get, Router};
 
-use self::handler::{delete_index, get_index, get_picker, post_index, get_add, get_add_items, get_schedule};
+use self::handler::{
+    delete_index, get_add, get_add_items, get_index, get_picker, get_schedule, post_index,
+};
 
 mod database;
 mod handler;

@@ -127,8 +127,7 @@ where
 }
 
 impl AddTimeReportTemplate {
-    pub fn new(date: Arc<str>, offset: u16, add: u16) -> Self
-    {
+    pub fn new(date: Arc<str>, offset: u16, add: u16) -> Self {
         AddTimeReportTemplate {
             date,
             items: (offset..offset + add)
@@ -141,8 +140,7 @@ impl AddTimeReportTemplate {
 }
 
 impl AddTimeReportExtraItemTemplate {
-    pub fn new(offset: u16, add: u16) -> Self
-    {
+    pub fn new(offset: u16, add: u16) -> Self {
         AddTimeReportExtraItemTemplate {
             items: (offset..offset + add)
                 .map(|i| AddTimeReportItemTemplate { i })
