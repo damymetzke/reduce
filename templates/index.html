@@ -16,27 +16,11 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Reduce</title>
-  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <h1>Reduce</h1>
-    <ul>
-      <li><a href="/time-reports">Time</a></li>
-    </ul>
+{% extends "layouts/default.html" %}
 
-    <footer>
-      <p>
-        The source for this web site is available at: <br/>
-        <a href="https://github.com/damymetzke/reduce">
-          https://github.com/damymetzke/reduce
-        </a>
-      </p>
-    </footer>
-</body>
-</html>
+{% block content %}
+  <h1>Reduce</h1>
+  <ul>
+    <li><a href="/time-reports">Time</a></li>
+  </ul>
+{% endblock %}

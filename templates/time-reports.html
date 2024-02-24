@@ -16,16 +16,13 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Reduce</title>
-  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="/static/style.css">
-  <meta name="htmx-config" content='{"useTemplateFragments":"true"}'>
-</head>
-<body>
+{% extends "layouts/default.html" %}
+
+{% block head %}
+  <title>Reduce - Time report</title>
+{% endblock %}
+
+{% block content %}
     <datalist id="list-categories">
       {% for category in categories %}
       <option value="{{ category }}">{{ category }}</option>
@@ -61,18 +58,4 @@
     <form id="time-report">
       {{ time_reports }}
     </form>
-
-    <hr class="background-black height-2 width-full mx-12 my-12">
-
-    <footer>
-      <p class="text-center">
-        The source for this web site is available at:
-        <a href="https://github.com/damymetzke/reduce" class="
-          text-view-foreground-link underline
-          ">
-          https://github.com/damymetzke/reduce
-        </a>
-      </p>
-    </footer>
-</body>
-</html>
+{% endblock %}
