@@ -1,35 +1,26 @@
 # Reduce
 
-Reduce is a productivity tool that focuses on simplicity and intent. To achieve this, several
-specific types of information are handled:
+Reduce is a web based application meant to reduce the complexity of tasks.
+This is interpreted in 2 ways. The first of which is that it uses an interface which
+attempts to reduce the information it shows you. All information is targeted to what you need to know,
+and usage is targeted towards "learning" the application by repeated usage. In practice this means less
+flashy styling, limited dynamic content, and clever ways to interpret data.
+A good example is how projects works. Projects are abstract categorizations of work, and support hierarchies.
+Dots can be used when entering projects in most cases. So you can create a bunch of projects just by inputting something
+like "foo.bar.baz".
 
-- Time usage
-- Tasks
-- Information to process
-- Documents
-
-To understand how to use Reduce, you should understand its 2 primary goals. The first of which is
-simplicity. Simplicity really entails 2 things. One of which is simplicity in technology. Reduce is
-built using a server-first architecture, using HTMX sparingly where appropriate. This means the
-resulting system is much more robust, reducing bugs, security issues, and maintainment cost. Another
-way Reduce is simple is in how you use it. Data has limited scope in what it can store. The same
-data is simple, such that it can creatively be used for multiple use cases. Reduce won't do much
-without your knowledge. Beyond internal backups, it won't change anything until you take some
-action. This means you won't have to worry about what happens when you're not looking. Because of
-this Reduce can be compared to a physical management system. Stored notes and documents won't just
-move on their own. And everything has a clear and organized location.
-
-The second goal is intent. Every change made to items is always intentional. It should not be
-possible that something unexpected happens without your knowledge. No data is ever deleted until it
-is verified by the user. And beyond intrinsic meta information like "last updated" no additional
-fields are changed beyond what the user changed. Opening an item doesn't change it, and no
-traditional notifications exist as those can also be read. This does mean that the system is poll
-based. In other words, it is a requirement that the user periodically check the tool if they don't
-want to miss time-based constraints.
+The second way is in how it models your tasks. Everything in Reduce is information that needs to be
+processed. This can be seen as a list of steps you need to take. Every step you take you reduce the
+amount of work by a little bit. Similar to how the functional higher order function reduce[^reducehigerorderfunction] works.
 
 > [!CAUTION]
 > Reduce is in a development version. Absolutely no reasonable security processes are in place. Run
 > at your own risk.
+
+## Content
+
+- [Quick setup](#quick-setup)
+- [Deployment](#deployment)
 
 ## Quick setup
 
@@ -96,7 +87,7 @@ the tailwind css sheet.
 No official binaries or containers are provided at this point in time. It's not recommended to run
 any production build of Reduce at this time, as it is in very early development.
 
-First make sure you have the Rust toolchain installed. Refer to the quick setup section for more
+First make sure you have the Rust tool chain installed. Refer to the quick setup section for more
 information.
 
 Build the project in release mode, by running:
@@ -126,6 +117,7 @@ Now make sure the server is started, preferably upon server restart, an you shou
 deployment server. Migrations are embedded in the binary, and work automatically. So no need to
 setup any tables manually.
 
+[^reducehigerorderfunction]: <https://en.wikipedia.org/wiki/Fold_(higher-order_function)>
 [^irust]: <https://www.rust-lang.org/tools/install>
 [^isqlxcli]: <https://lib.rs/crates/sqlx-cli>
 [^idocker]: <https://docs.docker.com/get-docker/>
