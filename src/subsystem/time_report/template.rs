@@ -20,22 +20,23 @@ use std::{borrow::Borrow, sync::Arc};
 
 use askama::Template;
 
-use super::database::TimeReportItemDTO;
+use super::{database::TimeReportItemDTO, shared::TimeReportPickerComment};
 
 #[derive(Template)]
 #[template(path = "api/time-reports/list-item.html", escape = "none")]
 pub struct TimeReportItemTemplate {
-    category: Box<str>,
-    start_time: Box<str>,
-    end_time: Box<str>,
-    i: u16,
-    value: Box<str>,
+    pub category: Box<str>,
+    pub start_time: Box<str>,
+    pub end_time: Box<str>,
+    pub i: u16,
+    pub value: Box<str>,
 }
 
 #[derive(Template)]
 #[template(path = "api/time-reports/picker.html", escape = "none")]
 pub struct TimeReportPickerTemplate {
     pub reports: Box<[TimeReportItemTemplate]>,
+    pub comments: Box<[TimeReportPickerComment]>,
 }
 
 #[derive(Template)]
@@ -106,22 +107,6 @@ where
             end_time,
             i,
             value,
-        }
-    }
-}
-
-impl<T, U> From<T> for TimeReportPickerTemplate
-where
-    T: IntoIterator<Item = U>,
-    (u16, U): Into<TimeReportItemTemplate>,
-{
-    fn from(value: T) -> Self {
-        TimeReportPickerTemplate {
-            reports: value
-                .into_iter()
-                .enumerate()
-                .map(|(i, item)| (i as u16, item).into())
-                .collect(),
         }
     }
 }

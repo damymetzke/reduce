@@ -22,6 +22,8 @@ use anyhow::Result;
 use chrono::{NaiveDate, NaiveTime};
 use sqlx::{query, query_as, Executor, Postgres};
 
+use super::shared::TimeReportPickerComment;
+
 #[derive(Debug)]
 pub struct CategoryNameDTO {
     pub name: Arc<str>,
@@ -32,7 +34,7 @@ pub async fn fetch_category_names<'a, T: Executor<'a, Database = Postgres>>(
 ) -> Result<Arc<[CategoryNameDTO]>> {
     Ok(query_as! {
         CategoryNameDTO,
-        "SELECT name FROM time_categories ORDER BY name ASC"
+        "SELECT name FROM projects ORDER BY name ASC"
     }
     .fetch_all(executor)
     .await?
@@ -53,11 +55,11 @@ pub async fn fetch_time_report_items<'a, T: Executor<'a, Database = Postgres>>(
     Ok(query_as! {
         TimeReportItemDTO,
         "
-            SELECT te.start_time, te.end_time, tc.name
+            SELECT te.start_time, te.end_time, p.name
             FROM time_entries te
-            JOIN time_categories tc ON te.category_id = tc.id
+            JOIN projects p ON te.project_id = p.id
             WHERE te.day = $1
-            ORDER BY tc.name, te.start_time;
+            ORDER BY p.name, te.start_time;
         ",
         date
 
@@ -65,6 +67,43 @@ pub async fn fetch_time_report_items<'a, T: Executor<'a, Database = Postgres>>(
     .fetch_all(executor)
     .await?
     .into())
+}
+
+struct TimeReportCommentInternal {
+    name: String,
+    content: Option<String>,
+}
+
+pub async fn fetch_time_report_comments<'a, T>(
+    executor: T,
+    date: &NaiveDate,
+) -> Result<Box<[TimeReportPickerComment]>>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    dbg!(date);
+    Ok(query_as! {
+        TimeReportCommentInternal,
+        "
+            SELECT tc.content, p.name
+            FROM time_comments tc
+            JOIN projects p ON tc.project_id = p.id
+            WHERE tc.day = $1
+            ORDER BY p.name;
+        ",
+        date
+
+    }
+    .fetch_all(executor)
+    .await?
+    .into_iter()
+    .map(
+        |TimeReportCommentInternal { name, content }| TimeReportPickerComment {
+            project: name.as_str().into(),
+            comments: content.unwrap_or_default().into(),
+        },
+    )
+    .collect())
 }
 
 pub async fn insert_time_entries_without_end_times<'a, T: Executor<'a, Database = Postgres>>(
@@ -75,20 +114,20 @@ pub async fn insert_time_entries_without_end_times<'a, T: Executor<'a, Database 
 ) -> Result<u64> {
     Ok(query! {
         "
-            INSERT INTO time_entries (category_id, day, start_time)
+            INSERT INTO time_entries (project_id, day, start_time)
             SELECT
-                tc.id AS category_id,
+                tc.id AS project_id,
                 $1 AS day,
                 start_time AS start_time
             FROM
-                time_categories tc
+                projects tc
             RIGHT JOIN
                 unnest(
                     $2::VARCHAR[],
                     $3::TIME[]
-                ) AS t(category_name, start_time)
+                ) AS t(project_name, start_time)
             ON
-                tc.name = t.category_name
+                tc.name = t.project_name
         ",
         date,
         categories,
@@ -108,22 +147,22 @@ pub async fn insert_time_entries_with_end_times<'a, T: Executor<'a, Database = P
 ) -> Result<u64> {
     Ok(query! {
         "
-            INSERT INTO time_entries (category_id, day, start_time, end_time)
+            INSERT INTO time_entries (project_id, day, start_time, end_time)
             SELECT
-                tc.id AS category_id,
+                tc.id AS project_id,
                 $1 AS day,
                 start_time AS start_time,
                 end_time AS end_time
             FROM
-                time_categories tc
+                projects tc
             RIGHT JOIN
                 unnest(
                     $2::VARCHAR[],
                     $3::TIME[],
                     $4::TIME[]
-                ) AS t(category_name, start_time, end_time)
+                ) AS t(project_name, start_time, end_time)
             ON
-                tc.name = t.category_name
+                tc.name = t.project_name
         ",
         date,
         categories,

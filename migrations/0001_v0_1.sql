@@ -1,4 +1,4 @@
-CREATE TABLE time_categories (
+CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -6,9 +6,16 @@ CREATE TABLE time_categories (
 );
 
 CREATE TABLE time_entries (
-    category_id INT REFERENCES time_categories(id) NOT NULL,
+    project_id INT REFERENCES projects(id) NOT NULL,
     day DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME,
     PRIMARY KEY(day, start_time)
+);
+
+CREATE TABLE time_comments (
+    project_id INT REFERENCES projects(id) NOT NULL,
+    day DATE NOT NULL,
+    content TEXT,
+    PRIMARY KEY(project_id, day)
 );

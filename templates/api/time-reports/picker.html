@@ -38,66 +38,119 @@
 #}
 
 
-<tr class="
-  border-b border-view-foreground-inactive
-  
-  bg-view-background-alternate
-  ">
-  <th class="
-      p-2
-      text-lg font-bold
-      border-l border-r border-view-foreground-inactive
-      first:border-l-0 last:border-r-0
+<table
+class="
+border border-view-decoration-focus
+rounded-md
+w-full
+"
+>
+    <tr class="
+      border-b border-view-foreground-inactive
+      
+      bg-view-background-alternate
       ">
-      <div class="flex flex-row justify-between">
-        <span class="flex-1 text-center">
-          Category
-        </span>
-        <span class="
-          cursor-pointer select-none
+      <th class="
+          p-2
+          text-lg font-bold
+          border-l border-r border-view-foreground-inactive
+          first:border-l-0 last:border-r-0
           ">
-          ○
-        </span>
-      </div>
-  </th>
-  <th class="
-      p-2
-      text-lg font-bold
-      border-l border-r border-view-foreground-inactive
-      first:border-l-0 last:border-r-0
-      ">
-      <div class="flex flex-row justify-between">
-        <span class="flex-1 text-center">
-          Start time
-        </span>
-        <span class="
-          cursor-pointer select-none
+          <div class="flex flex-row justify-between">
+            <span class="flex-1 text-center">
+              Project
+            </span>
+            <span class="
+              cursor-pointer select-none
+              ">
+              ○
+            </span>
+          </div>
+      </th>
+      <th class="
+          p-2
+          text-lg font-bold
+          border-l border-r border-view-foreground-inactive
+          first:border-l-0 last:border-r-0
           ">
-          ○
-        </span>
-      </div>
-  </th>
-  <th class="
-      p-2
-      text-lg font-bold
-      border-l border-r border-view-foreground-inactive
-      first:border-l-0 last:border-r-0
-      ">
-      End time
-  </th>
-  <th class="
-      p-2
-      text-lg font-bold
-      border-l border-r border-view-foreground-inactive
-      first:border-l-0 last:border-r-0
-      ">
-      Select
-  </th>
-</tr>
+          <div class="flex flex-row justify-between">
+            <span class="flex-1 text-center">
+              Start time
+            </span>
+            <span class="
+              cursor-pointer select-none
+              ">
+              ○
+            </span>
+          </div>
+      </th>
+      <th class="
+          p-2
+          text-lg font-bold
+          border-l border-r border-view-foreground-inactive
+          first:border-l-0 last:border-r-0
+          ">
+          End time
+      </th>
+      <th class="
+          p-2
+          text-lg font-bold
+          border-l border-r border-view-foreground-inactive
+          first:border-l-0 last:border-r-0
+          ">
+          Select
+      </th>
+    </tr>
 
-{% for item in reports %}
-  <tr class="bg-view-background-normal odd:bg-view-background-alternate">
-    {{ item }}
-  </tr>
-{% endfor %}
+    {% for item in reports %}
+      <tr class="bg-view-background-normal odd:bg-view-background-alternate">
+        {{ item }}
+      </tr>
+    {% endfor %}
+</table>
+<table
+class="
+    border border-view-decoration-focus
+    rounded-md
+    w-full
+    mt-12
+    ">
+    <tr class="
+      border-b border-view-foreground-inactive
+      
+      bg-view-background-alternate
+      ">
+      <th class="
+          p-2
+          text-lg font-bold
+          border-l border-r border-view-foreground-inactive
+          first:border-l-0 last:border-r-0
+          ">
+          <div class="flex flex-row justify-between">
+            <span class="flex-1 text-center">
+              Project
+            </span>
+            <span class="
+              cursor-pointer select-none
+              ">
+              ○
+            </span>
+          </div>
+      </th>
+      <th class="
+          p-2
+          text-lg font-bold
+          border-l border-r border-view-foreground-inactive
+          first:border-l-0 last:border-r-0
+          ">
+          Comments
+      </th>
+    </tr>
+    {% for item in comments %}
+      <tr class="bg-view-background-normal odd:bg-view-background-alternate">
+        <td class="p-2 text-lg">{{item.project}}</td>
+        <td class="p-2 text-lg">{{item.comments}}</td>
+      </tr>
+    {% endfor %}
+</table
 

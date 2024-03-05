@@ -16,22 +16,9 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use axum::{routing::get, Router};
+use std::sync::Arc;
 
-use self::handler::{
-    delete_index, get_add, get_add_items, get_index, get_picker, get_schedule, post_index,
-};
-
-mod database;
-mod handler;
-mod shared;
-mod template;
-
-pub fn routes() -> Router {
-    Router::new()
-        .route("/", get(get_index).post(post_index).delete(delete_index))
-        .route("/picker", get(get_picker))
-        .route("/add", get(get_add))
-        .route("/add/items", get(get_add_items))
-        .route("/schedule", get(get_schedule))
+pub struct TimeReportPickerComment {
+    pub project: Arc<str>,
+    pub comments: Box<str>,
 }

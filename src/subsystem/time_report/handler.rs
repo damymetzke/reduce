@@ -43,10 +43,13 @@ use crate::{
 use self::params::{DeleteIndexParams, PostIndexParams};
 
 use super::{
-    database::{delete_time_entries, fetch_category_names},
+    database::{
+        delete_time_entries, fetch_category_names, fetch_time_report_comments, TimeReportItemDTO,
+    },
     template::{
         AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate,
-        TimeReportIndexTemplate, TimeReportPickerTemplate, TimeReportsTemplate,
+        TimeReportIndexTemplate, TimeReportItemTemplate, TimeReportPickerTemplate,
+        TimeReportsTemplate,
     },
 };
 
@@ -64,12 +67,14 @@ pub async fn get_index(
         .and_then(|date| NaiveDate::parse_from_str(date.as_ref(), "%Y-%m-%d").ok())
         .unwrap_or(Local::now().date_naive());
 
-    let (categories, reports) = join!(
+    let (categories, reports, comments) = join!(
         fetch_category_names(&pool),
-        fetch_time_report_items(&pool, &date)
+        fetch_time_report_items(&pool, &date),
+        fetch_time_report_comments(&pool, &date),
     );
     let categories = categories?;
     let reports = reports?;
+    let comments = comments?;
 
     Ok(TimeReportsTemplate {
         categories: categories
@@ -83,6 +88,7 @@ pub async fn get_index(
                     .enumerate()
                     .map(|(i, report)| (i as u16, report).into())
                     .collect(),
+                comments,
             },
             picker_date: date.format("%Y-%m-%d").to_string().into(),
         },
@@ -186,8 +192,19 @@ pub async fn get_picker(
         format!("/time-reports?date={}", params.date).parse()?,
     );
 
-    let picker: TimeReportPickerTemplate =
-        fetch_time_report_items(&pool, &date).await?.as_ref().into();
+    let (reports, comments) = join!(
+        fetch_time_report_items(&pool, &date),
+        fetch_time_report_comments(&pool, &date),
+    );
+
+    let reports = reports?
+        .into_iter()
+        .enumerate()
+        .map(|(i, value)| (i as u16, value).into())
+        .collect();
+    let comments = comments?;
+
+    let picker = TimeReportPickerTemplate { reports, comments };
 
     Ok((headers, picker))
 }
@@ -229,7 +246,14 @@ pub async fn get_schedule(
     Query(params): Query<GetTimeReportScheduleParams>,
 ) -> AppResult<impl IntoResponse> {
     let date = NaiveDate::parse_from_str(params.date.as_ref(), "%Y-%m-%d")?;
-    let reports = fetch_time_report_items(&pool, &date).await?;
+
+    let (reports, comments) = join!(
+        fetch_time_report_items(&pool, &date),
+        fetch_time_report_comments(&pool, &date)
+    );
+
+    let reports = reports?;
+    let comments = comments?;
 
     Ok(TimeReportIndexTemplate {
         time_report_picker: TimeReportPickerTemplate {
@@ -238,6 +262,7 @@ pub async fn get_schedule(
                 .enumerate()
                 .map(|(i, report)| (i as u16, report).into())
                 .collect(),
+            comments,
         },
         picker_date: date.format("%Y-%m-%d").to_string().into(),
     })
