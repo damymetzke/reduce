@@ -1,4 +1,5 @@
 = Reduce
+:toc:
 
 Reduce is a web based application meant to reduce the complexity of tasks.
 This is interpreted in 2 ways. The first of which is that it uses an interface which
@@ -16,8 +17,6 @@ amount of work by a little bit. Similar to how the functional higher order funct
 [CAUTION]
 Reduce is in a development version. Absolutely no reasonable security processes are in place. Run
 at your own risk.
-
-:toc:
 
 == Quick setup
 

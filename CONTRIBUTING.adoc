@@ -1,0 +1,92 @@
+= Reduce contributing guidelines
+:toc:
+
+Thank you for considering contribution to Reduce! There are many ways to contribute, you don't even
+have to write a single line of code. However before explaining the specific method, a few words
+regarding the vision of the project.
+
+Reduce has been written with some very specific goals. First of development has been simplified
+maximally except for the complexity introduced by Rust. This has some very good reasons. First of
+all, complexity is generally bad on its own, it should be justified when used. For a lot of web
+development projects tools are used that introduce lots of abstraction. From another perspective,
+this is introducing runtime complexity in order to get a more simple and intuitive development
+experience. While this is definitely a reasonable trade off is many cases, Reduce aims to
+specifically avoid this complexity relying more on the skills of the programmers. This has effects
+on what kind of code is accepted. For example manually binding to a shared library, or using unsafe
+Rust in general, will not be accepted in most cases. Make sure to write in a style that plays nice
+with the borrow checker, even if that means that sometimes you need to copy data or use special
+pointer types.
+
+Reduce also has a simple perspective on feature support. It's undesirable to have multiple systems
+that do the same time. Great care is taken to limit the amount of subsystems. This also means that
+there won't be as much customization options. Reduce has its own way of doing things, it's not meant
+to be a platform that you can shape to your will. The underlying program is, however, designed to do
+quick prototyping like this. So feel free to write your own systems that work the way you want to.
+
+There are 2 ways subsystems interact with the entire system. The first is through shared
+primitives. As of now only one exists, which is the project type. Shared primitives are basic types
+that subsystems may use. The second is by interfacing with another subsystem. One example that will
+become very common is to send a collection of files to the file-download subsystem. This, however,
+requires knowledge of the subsystem beforehand. Making this a one way capability. However this is
+not meant to act as a live interface, rather it's more like an export focused message passing
+system. When a subsystem has done it's job, it may have to pass it along to a different subsystem.
+
+== Report a bug
+
+Thank you for considering to report a bug! However before doing so, please make sure you're sending
+it to the correct location. Here we only accept bugs that are reproducible. They must also be
+verified with a supported version in this repository, which is for now just the HEAD of the main
+branch. If you're not sure about this or how to do this, please don't report the issue here. You
+should consider sending bugs to the following sources in this order:
+
+. The server Reduce is hosted on, in the future this can be done directly through the site.
+. The package maintainer, this information may only be known by the site maintainer or they may directly deploy from git.
+. This repository.
+
+So if you're unsure, send the bug report to the first option: the server hosting Reduce. They are
+responsible to rule out configuration issues, and then send it to the appropriate upstream issue
+tracker.
+
+When reporting a bug, please use the provided template, it contains all guidance required to report
+a bug.
+
+== Suggest a feature
+
+Before suggesting a feature, please make sure you understand the vision of the project. It's
+discouraged to suggest features without considering the impact on the project. In general, you
+shouldn't suggest features if you haven't used the tool for some reasonable amount of time.
+
+Another thing to consider is that new subsystems are comparatively harder to justify. Make sure the
+system you're suggesting is filling a very important gap in the capabilities of the system.
+
+On the other hand, suggestions that remove complexity are very much appreciated. If you can reduce
+the amount of input boxes while not compromising usability then that is very desirable.
+
+== Contribute code
+
+This is probably the most fun part of contributing for many developers, however I do want to take
+some time to set some expectations. Contributions consider really 2 parties here, the maintainer and
+the contributor. When sending a pull request the maintainer takes on the roll of quality control. It
+is their responsibility to check that:
+
+* The code and commits are well structured and can be safely included. * Any introduced
+capabilities fit within the vision of the project.
+
+Maintainers will not suggest changes beyond trivial mistakes. If a pull request has a big mistake,
+it will be explained clearly and left up to the contributor to fix. And if a pull request seems to
+not fit at all it will be rejected. This is done in the best interest of both parties. Nobody
+benefits from wasted time.
+
+As a contributor you are responsible for the quality of your code. The assumption is that you are
+comfortable with putting your code online. If you need approval from a maintainer to feel sure like
+your code is valuable, you really shouldn't send it at all.
+
+Don't let this deter you from contributing as a learning developer though. You should really be
+confident in providing your code to others even if you lack experience. You won't get any mentorship
+here, so make sure you have the means to learn from any mistakes. You'll be provided with
+(hopefully) clear feedback, it's up to you to learn from that feedback.
+
+All information regarding setting up your development environment is included in the README file.
+And feel free to as any questions about the project itself through appropriate channels. This could
+be an issue, pull request, a discussion, or any other means of communication that may arise in the
+future.
