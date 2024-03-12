@@ -1,4 +1,4 @@
-# Reduce
+= Reduce
 
 Reduce is a web based application meant to reduce the complexity of tasks.
 This is interpreted in 2 ways. The first of which is that it uses an interface which
@@ -11,60 +11,60 @@ like "foo.bar.baz".
 
 The second way is in how it models your tasks. Everything in Reduce is information that needs to be
 processed. This can be seen as a list of steps you need to take. Every step you take you reduce the
-amount of work by a little bit. Similar to how the functional higher order function reduce[^reducehigerorderfunction] works.
+amount of work by a little bit. Similar to how the functional higher order function https://en.wikipedia.org/wiki/Fold_(higher-order_function)[reduce] works.
 
-> [!CAUTION]
-> Reduce is in a development version. Absolutely no reasonable security processes are in place. Run
-> at your own risk.
+[CAUTION]
+Reduce is in a development version. Absolutely no reasonable security processes are in place. Run
+at your own risk.
 
-## Content
+:toc:
 
-- [Quick setup](#quick-setup)
-- [Deployment](#deployment)
-
-## Quick setup
+== Quick setup
 
 Before working on Reduce, a few prerequisites are required. Make sure you have installed the
 following:
 
-- The Rust tool chain and Cargo[^irust]
-- sqlx-cli[^isqlxcli]
-- Docker[^idocker]
-- Node.js[^inode]
+* https://www.rust-lang.org/tools/install[The Rust tool chain and Cargo]
+* https://lib.rs/crates/sqlx-cli[sqlx-cli]
+* https://docs.docker.com/get-docker/[Docker]
+* https://nodejs.org/en[Node.js]
 
 While not strictly required, the following programs are recommended for use during development:
 
-- cargo-watch[^icargowatch]
-- mprocs[^improcs]
+* https://github.com/watchexec/cargo-watch[cargo-watch]
+* https://github.com/pvolok/mprocs[mprocs]
 
 It's recommended to run the project using mprocs:
 
-```bash
+[source,bash]
+----
 mprocs
-```
+----
 
 This will start all required programs within a single terminal window. Please reference
 mprocs itself for further information about how to interact with the multiple windows.
 
 If you prefer to manually manage the processes, you should make sure to run the following commands in separate sessions:
 
-```bash
+[source,bash]
+----
 docker compose up
 npm run tailwind
 # Run cargo directly, requires manual restarting
 cargo r
 # Use cargo-watch for automatic restarts
 cargo watch -x r
-```
+----
 
-> [!NOTE]
-> This doesn't include clippy, which you may want to run manually.
+[NOTE]
+This doesn't include clippy, which you may want to run manually.
 
 There is one more step required before the build will succeed. For that run the following command:
 
-```bash
+[source,bash]
+----
 sqlx migrate run
-```
+----
 
 This will run migrations, which is required for the build process to succeed.
 
@@ -82,7 +82,7 @@ uses the actual database connection during compilation. If you reset the databas
 `sqlx migrate run` again. The CSS is compiled into the binary itself, so you also need to compile
 the tailwind css sheet.
 
-## Deployment
+== Deployment
 
 No official binaries or containers are provided at this point in time. It's not recommended to run
 any production build of Reduce at this time, as it is in very early development.
@@ -92,9 +92,10 @@ information.
 
 Build the project in release mode, by running:
 
-```bash
+[source,bash]
+----
 cargo build --release
-```
+----
 
 Then it's time to set up the server. How this is done depends on where and how you host the server.
 Before you set up the server itself, make sure you have a postgres database available. There are
@@ -104,9 +105,10 @@ already has a database available.
 To deploy the server itself, copy the resulting binary, located at `target/release/reduce`, to your
 deployment server. The server requires the following environment variables to be set:
 
-```bash
+[source,bash]
+----
 DATABASE_URL=postgres://user:password@domain:5432/database_name
-```
+----
 
 Replace the information with the information for your database. You should have either created
 these yourself, or received them from your hosting provider, depending on how you set up the
@@ -116,11 +118,3 @@ you set it up yourself, or ask your hosting provider for additional information.
 Now make sure the server is started, preferably upon server restart, an you should have a working
 deployment server. Migrations are embedded in the binary, and work automatically. So no need to
 setup any tables manually.
-
-[^reducehigerorderfunction]: <https://en.wikipedia.org/wiki/Fold_(higher-order_function)>
-[^irust]: <https://www.rust-lang.org/tools/install>
-[^isqlxcli]: <https://lib.rs/crates/sqlx-cli>
-[^idocker]: <https://docs.docker.com/get-docker/>
-[^inode]: <https://docs.docker.com/get-docker/>
-[^icargowatch]: <https://github.com/watchexec/cargo-watch>
-[^improcs]: <https://github.com/pvolok/mprocs>
