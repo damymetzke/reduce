@@ -43,13 +43,10 @@ use crate::{
 use self::params::{DeleteIndexParams, PostIndexParams};
 
 use super::{
-    database::{
-        delete_time_entries, fetch_category_names, fetch_time_report_comments, TimeReportItemDTO,
-    },
+    database::{delete_time_entries, fetch_category_names, fetch_time_report_comments},
     template::{
         AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate,
-        TimeReportIndexTemplate, TimeReportItemTemplate, TimeReportPickerTemplate,
-        TimeReportsTemplate,
+        TimeReportIndexTemplate, TimeReportPickerTemplate, TimeReportsTemplate,
     },
 };
 
@@ -201,7 +198,7 @@ pub async fn get_picker(
     );
 
     let reports = reports?
-        .into_iter()
+        .iter()
         .enumerate()
         .map(|(i, value)| (i as u16, value).into())
         .collect();
