@@ -51,7 +51,7 @@ fn parse_time(raw: &str) -> Result<NaiveTime> {
         [hour, minute] if (hour.len() == 1 || hour.len() == 2) && minute.len() == 2 => {
             ((*hour).into(), (*minute).into())
         }
-        [full] if full.len() == 3 => ((*full)[0..1].into(), (*full)[1..2].into()),
+        [full] if full.len() == 3 => ((*full)[0..1].into(), (*full)[1..3].into()),
         [full] if full.len() == 4 => ((*full)[0..2].into(), (*full)[2..4].into()),
         _ => return Err(anyhow!("Time string is improperly formatted")),
     };
@@ -226,5 +226,40 @@ impl<'de> Deserialize<'de> for DeleteIndexParams {
             }
         }
         deserializer.deserialize_any(DeleteIndexParamsVisitor)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::iter::zip;
+
+    use chrono::NaiveTime;
+
+    use crate::subsystem::time_report::handler::params::parse_time;
+
+    #[test]
+    fn test_parse_time() {
+        let input = [
+            "0915",
+            "1245",
+            "930",
+            "10:30",
+            "07:45",
+            "9:00",
+        ];
+
+        let expected = [
+            NaiveTime::from_hms_opt(9, 15, 0).unwrap(),
+            NaiveTime::from_hms_opt(12, 45, 0).unwrap(),
+            NaiveTime::from_hms_opt(9, 30, 0).unwrap(),
+            NaiveTime::from_hms_opt(10, 30, 0).unwrap(),
+            NaiveTime::from_hms_opt(7, 45, 0).unwrap(),
+            NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
+        ];
+
+        for (input, expected) in zip(input.iter(), expected.iter()) {
+            let result = parse_time(input).unwrap();
+            assert_eq!(result, *expected);
+        }
     }
 }
