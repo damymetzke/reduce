@@ -99,6 +99,7 @@ pub async fn post_index(
     Extension(pool): Extension<Pool<Postgres>>,
     Form(params): Form<PostIndexParams>,
 ) -> AppResult<impl IntoResponse> {
+    dbg!(&params);
     let mut transaction = pool.begin().await?;
 
     let mut categories = Vec::new();
@@ -110,6 +111,7 @@ pub async fn post_index(
                 category,
                 start_time,
                 end_time: None,
+                ..
             } => Some((category, start_time)),
             _ => None,
         }) {
@@ -136,6 +138,7 @@ pub async fn post_index(
                 category,
                 start_time,
                 end_time: Some(end_time),
+                ..
             } => Some((category, start_time, end_time)),
             _ => None,
         }) {

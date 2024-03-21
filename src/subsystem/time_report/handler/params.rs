@@ -30,6 +30,7 @@ pub struct PostIndexItem {
     pub category: Arc<str>,
     pub start_time: NaiveTime,
     pub end_time: Option<NaiveTime>,
+    pub comment: Arc<str>,
 }
 
 #[derive(Debug)]
@@ -83,6 +84,7 @@ impl<'de> Deserialize<'de> for PostIndexParams {
                 let mut categories: HashMap<u16, Arc<str>> = HashMap::new();
                 let mut start_times: HashMap<u16, NaiveTime> = HashMap::new();
                 let mut end_times: HashMap<u16, NaiveTime> = HashMap::new();
+                let mut comments: HashMap<u16, Arc<str>> = HashMap::new();
 
                 while let Some(key) = map.next_key::<Rc<str>>()? {
                     if key.as_ref() == "date" {
@@ -116,21 +118,27 @@ impl<'de> Deserialize<'de> for PostIndexParams {
                         "end-time" => {
                             end_times.insert(index, parse_time(value).map_err(Error::custom)?);
                         }
+                        "comment" => {
+                            comments.insert(index, value.into());
+                        }
                         _ => {}
                     };
                 }
 
                 let mut index = 0;
                 let mut items = Vec::new();
+                let empty_string: Arc<str> = Arc::from("");
 
                 for i in 0.. {
                     match (categories.get(&i), start_times.get(&i)) {
                         (Some(category), Some(start_time)) => {
                             let end_time = end_times.get(&index).cloned();
+                            let comment = comments.get(&i).cloned().unwrap_or(empty_string.clone());
                             let item = PostIndexItem {
                                 category: category.clone(),
                                 start_time: *start_time,
                                 end_time,
+                                comment,
                             };
                             items.push(item);
                             index += 1;
