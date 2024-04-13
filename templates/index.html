@@ -40,8 +40,16 @@
 {% extends "layouts/default.html" %}
 
 {% block content %}
-  <h1>Reduce</h1>
-  <ul>
-    <li><a href="/time-reports">Time</a></li>
+  <h1 class="text-4xl font-bold text-center underline">Reduce</h1>
+  <p class="mx-24 my-8">
+    Welcome to Reduce! Reduce is currently in a very early and experimental
+    phase in development.  Reduce is a productivity tool focused on simplicity
+    in usage. It's not meant to be intuitive, instead the end user is expected
+    to learn the patterns required for using the tool.
+  </p>
+  <hr class="background-black height-2 width-full mx-12 my-12">
+  <h2 class="text-4xl underline text-center">tools</h2>
+  <ul class="my-8 flex flex-row justify-center">
+    <li class="bg-view-background-alternate border border-black rounded-xl text-lg font-bold"><a class="p-4" href="/time-reports">Time</a></li>
   </ul>
 {% endblock %}
