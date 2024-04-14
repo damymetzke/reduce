@@ -18,35 +18,37 @@
 
 pub mod params;
 
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
+use anyhow::anyhow;
 use askama_axum::IntoResponse;
 use axum::{extract::Query, http::HeaderMap, Extension, Form};
-use chrono::{Local, NaiveDate};
+use chrono::{Local, NaiveDate, NaiveTime};
+use itertools::{chain, Either, Itertools};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 use tokio::join;
-use tracing::info;
 
 use crate::{
     error::AppResult,
     subsystem::time_report::{
         database::{
-            fetch_time_report_items, insert_time_entries_with_end_times,
+            fetch_project_info, fetch_time_report_items, insert_comments,
             insert_time_entries_without_end_times,
         },
-        handler::params::PostIndexItem,
-        template::TimeReportInsertResultTemplate,
+        logic::{normalize_comment, parse_time},
     },
 };
 
-use self::params::{DeleteIndexParams, PostIndexParams};
+use self::params::DeleteIndexParams;
 
 use super::{
-    database::{delete_time_entries, fetch_category_names, fetch_time_report_comments},
+    database::{delete_time_entries, fetch_category_names, fetch_time_report_comments, insert_time_entries_with_end_times},
     template::{
-        AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate,
-        TimeReportIndexTemplate, TimeReportPickerTemplate, TimeReportsTemplate,
+        AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate, TimeReportIndexTemplate, TimeReportInsertResultTemplate, TimeReportPickerTemplate, TimeReportsTemplate
     },
 };
 
@@ -94,59 +96,145 @@ pub async fn get_index(
 
 pub async fn post_index(
     Extension(pool): Extension<Pool<Postgres>>,
-    Form(params): Form<PostIndexParams>,
+    Form(params): Form<HashMap<Arc<str>, Arc<str>>>,
 ) -> AppResult<impl IntoResponse> {
-    dbg!(&params);
+    let date = params.get("date").ok_or(anyhow!("Date was not provided"))?;
+    let date = NaiveDate::parse_from_str(date, "%Y-%m-%d")?;
+
+    let indexes: HashSet<_> = params
+        .iter()
+        .filter_map(|(key, value)| match value.as_ref() {
+            "" => None,
+            _ => Some(key),
+        })
+        .filter_map(|key| key.split_once("--"))
+        .filter_map(|(index, _)| index.parse::<u16>().ok())
+        .collect();
+
+    let key_convert = |input: String| {
+        params
+            .get(input.as_str())
+            .and_then(|value| match value.as_ref() {
+                "" => None,
+                _ => Some(value),
+            })
+    };
+
+    let (without_end_times, with_end_times): (Vec<_>, Vec<_>) = indexes
+        .iter()
+        .filter_map(|index| {
+            match (
+                key_convert(format!("{}--project", index)),
+                key_convert(format!("{}--start-time", index)),
+                key_convert(format!("{}--end-time", index)),
+                key_convert(format!("{}--comment", index)),
+            ) {
+                (Some(project), Some(start_time), end_time, comment) => {
+                    Some((project.as_ref(), start_time.as_ref(), end_time, comment))
+                }
+                _ => None,
+            }
+        })
+        .partition_map(|(project, start_time, end_time, comment)| match end_time {
+            None => Either::Left((project, start_time, comment)),
+            Some(end_time) => Either::Right((project, start_time, end_time.as_ref(), comment)),
+        });
+
+    let project_names: HashSet<_> = chain(
+        without_end_times.iter().map(|(project, ..)| project),
+        with_end_times.iter().map(|(project, ..)| project),
+    )
+    .copied()
+    .collect();
+    let project_names: Box<_> = project_names.into_iter().map(String::from).collect();
+
+    let project_info = fetch_project_info(&pool, &date, project_names.as_ref()).await?;
+
+    let mut comments: HashMap<&str, String> = HashMap::default();
+
+    for (project, comment) in chain!(
+        project_info
+            .iter()
+            .map(|info| (info.name.as_ref(), info.comment.clone())),
+        without_end_times.iter().map(|(project, _, comment)| (
+            *project,
+            comment.map(|value| String::from(value.as_ref()))
+        )),
+        with_end_times.iter().map(|(project, _, _, comment)| (
+            *project,
+            comment.map(|value| String::from(value.as_ref()))
+        )),
+    )
+    .filter_map(|(project, comment)| comment.map(|comment| (project, comment)))
+    {
+        if let Some(value) = comments.get_mut(project) {
+            value.push(';');
+            value.push_str(comment.as_ref());
+            continue;
+        }
+
+        comments.insert(project, comment);
+    }
+
+    let project_name_to_id: HashMap<_, _> = project_info
+        .iter()
+        .map(|info| (info.name.as_ref(), info.id))
+        .collect();
+
     let mut transaction = pool.begin().await?;
 
-    let mut categories = Vec::new();
-    let mut start_times = Vec::new();
+    let _num_comments = {
+        let (project_ids, comments): (Vec<_>, Vec<_>) = comments
+            .iter()
+            .filter_map(|(key, value)| {
+                project_name_to_id
+                    .get(*key)
+                    .map(|key| (*key, normalize_comment(value.as_str())))
+            })
+            .unzip();
 
-    let insert_without_end_times = {
-        for (category, start_time) in params.items.iter().filter_map(|item| match item {
-            PostIndexItem {
-                category,
-                start_time,
-                end_time: None,
-                ..
-            } => Some((category, start_time)),
-            _ => None,
-        }) {
-            categories.push(category.to_string());
-            start_times.push(*start_time);
-        }
+        insert_comments(
+            &mut *transaction,
+            &date,
+            project_ids.as_slice(),
+            comments.as_slice(),
+        )
+        .await?
+    };
+
+    let num_without_end_times = {
+        let (categories, start_times): (Vec<_>, Vec<_>) = without_end_times
+            .iter()
+            .filter_map(|(project, start_time, _)| {
+                parse_time(start_time)
+                    .ok()
+                    .map(|start_time| (String::from(*project), start_time))
+            })
+            .unzip();
 
         insert_time_entries_without_end_times(
             &mut *transaction,
-            &params.date,
+            &date,
             categories.as_slice(),
             start_times.as_slice(),
         )
         .await?
     };
 
-    let mut categories = Vec::new();
-    let mut start_times = Vec::new();
-    let mut end_times = Vec::new();
-
-    let insert_with_end_times = {
-        for (category, start_time, end_time) in params.items.iter().filter_map(|item| match item {
-            PostIndexItem {
-                category,
-                start_time,
-                end_time: Some(end_time),
-                ..
-            } => Some((category, start_time, end_time)),
-            _ => None,
-        }) {
-            categories.push(category.to_string());
-            start_times.push(*start_time);
-            end_times.push(*end_time);
-        }
+    let num_with_end_times = {
+        let (categories, start_times, end_times): (Vec<_>, Vec<_>, Vec<_>) = with_end_times
+            .iter()
+            .filter_map(|(project, start_time, end_time, _)| {
+                parse_time(start_time)
+                    .ok()
+                    .zip(parse_time(end_time).ok())
+                    .map(|(start_time, end_time)| (String::from(*project), start_time, end_time))
+            })
+            .multiunzip();
 
         insert_time_entries_with_end_times(
             &mut *transaction,
-            &params.date,
+            &date,
             categories.as_slice(),
             start_times.as_slice(),
             end_times.as_slice(),
@@ -154,15 +242,11 @@ pub async fn post_index(
         .await?
     };
 
-    let num_insertions = insert_without_end_times + insert_with_end_times;
-
-    info!("Inserted {} time entries into the database", num_insertions);
-
     transaction.commit().await?;
 
     Ok(TimeReportInsertResultTemplate {
-        date: params.date.format("%Y-%m-%d").to_string().into(),
-        num_insertions,
+        date: date.format("%Y-%m-%d").to_string().into(),
+        num_insertions: num_without_end_times + num_with_end_times,
     })
 }
 

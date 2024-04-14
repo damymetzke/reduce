@@ -149,7 +149,7 @@ class="
     {% for item in comments %}
       <tr class="bg-view-background-normal odd:bg-view-background-alternate">
         <td class="p-2 text-lg">{{item.project}}</td>
-        <td class="p-2 text-lg">{{item.comments}}</td>
+        <td class="p-2 text-lg">{{item.comments|linebreaks}}</td>
       </tr>
     {% endfor %}
 </table

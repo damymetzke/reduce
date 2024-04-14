@@ -25,6 +25,61 @@ use sqlx::{query, query_as, Executor, Postgres};
 use super::shared::TimeReportPickerComment;
 
 #[derive(Debug)]
+pub struct ProjectInfoDTO {
+    pub name: Arc<str>,
+    pub id: i32,
+    pub comment: Option<String>,
+}
+
+pub async fn fetch_project_info<'a, T: Executor<'a, Database = Postgres>>(
+    executor: T,
+    date: &NaiveDate,
+    names: &[String],
+) -> Result<Arc<[ProjectInfoDTO]>> {
+    Ok(query_as! {
+        ProjectInfoDTO,
+        "
+        SELECT projects.name, projects.id, time_comments.content AS comment
+        FROM projects
+        LEFT JOIN time_comments ON projects.id = time_comments.project_id
+        AND time_comments.day = $1
+        WHERE projects.name = ANY($2)
+        ",
+        date,
+        names,
+    }
+    .fetch_all(executor)
+    .await?
+    .into())
+}
+
+pub async fn insert_comments<'a, T: Executor<'a, Database = Postgres>>(
+    executor: T,
+    date: &NaiveDate,
+    project_ids: &[i32],
+    comments: &[String],
+) -> Result<u64> {
+    Ok(query! {
+        "
+        INSERT INTO time_comments (project_id, day, content)
+        SELECT t.project_id, $1, t.content
+        FROM unnest(
+            $2::INT[],
+            $3::VARCHAR[]
+        ) as t(project_id, content)
+        ON CONFLICT (project_id, day) DO UPDATE 
+        SET content = EXCLUDED.content
+        ",
+        date,
+        project_ids,
+        comments,
+    }
+    .execute(executor)
+    .await?
+    .rows_affected())
+}
+
+#[derive(Debug)]
 pub struct CategoryNameDTO {
     pub name: Arc<str>,
 }
