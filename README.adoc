@@ -1,119 +1,82 @@
 = Reduce
 :toc:
 
-Reduce is a web based application meant to reduce the complexity of tasks.
-This is interpreted in 2 ways. The first of which is that it uses an interface which
-attempts to reduce the information it shows you. All information is targeted to what you need to know,
-and usage is targeted towards "learning" the application by repeated usage. In practice this means less
-flashy styling, limited dynamic content, and clever ways to interpret data.
-A good example is how projects works. Projects are abstract categorizations of work, and support hierarchies.
-Dots can be used when entering projects in most cases. So you can create a bunch of projects just by inputting something
-like "foo.bar.baz".
+[NOTE]
+Reduce at this time is developed exclusively by me. I'm not accepting any contributions.
 
-The second way is in how it models your tasks. Everything in Reduce is information that needs to be
-processed. This can be seen as a list of steps you need to take. Every step you take you reduce the
-amount of work by a little bit. Similar to how the functional higher order function https://en.wikipedia.org/wiki/Fold_(higher-order_function)[reduce] works.
+Reduce is a web application and productivity tool. It's best understood by 2 statements, both of
+which are examples of "reduction". The first one is a reduction in complexity.  Reduce is built
+to be as simple as possible for the end user. Note that simple here doesn't mean intuitive,
+underlying complexity is considered as well. For example, take the idea of generic tags. Tags
+are typically versatile. This can lead to situations where multiple concepts are described in tags.
+
+For example, take an email inbox for a company. You could have
+a set of tags that describe at what stage an email is in resolution. You can have
+tags for specific topics. You can have tags for mentioning context like whether or not
+there is help needed. This makes tags very versatile, which is important if your
+application must be adaptable. However, it does add some complexity for the end user.
+You have to think about all variations of tags. Most typical people won't find issue
+in this, but Reduce is built specifically with the people that have issue with this in mind.
+It does this in a few ways:
+
+* Reduce is opinionated: promoting a very focused way to use the tool.
+* Reduce prioritizes semantic value: terms and concepts are with intent and with a clear purpose.
+* Reduce avoids ambiguity: a person should be very unlikely to misinterpret the intent of concepts.
+
+The second meaning for Reduce is the reduction of tasks. Reduce can roughly be separated
+in 3 parts.  The first is input, this can be manual or automatic. And these create tasks to
+do. Then there is the reduction part. The idea being that each interaction with Reduce shrinks
+what you're doing. And finally there is the output. Not all things produce output, but those
+who do will do so cleanly. In some sense you could consider any program that manages tasks to
+work this way. The point of Reduce is to bring this idea into direct focus. This is meant to
+be more ideal for people with executive dysfunction. It's a way of cutting up the tasks into
+small digestible bits.
 
 [CAUTION]
 Reduce is in a development version. Absolutely no reasonable security processes are in place. Run
 at your own risk.
 
-== Quick setup
+== Requirements
 
-Before working on Reduce, a few prerequisites are required. Make sure you have installed the
-following:
+* Rust toolchain and Cargo
+* Node
+* NPM
+* Python
+* PDM (python tool)
+* Maturin (python tool)
+* A way to run a Postgres server, Docker is recommended
 
-* https://www.rust-lang.org/tools/install[The Rust tool chain and Cargo]
-* https://lib.rs/crates/sqlx-cli[sqlx-cli]
-* https://docs.docker.com/get-docker/[Docker]
-* https://nodejs.org/en[Node.js]
+The following are optional, but strongly recommended:
 
-While not strictly required, the following programs are recommended for use during development:
+* mprocs (rust crate)
+* cargo-watch (cargo tool)
 
-* https://github.com/watchexec/cargo-watch[cargo-watch]
-* https://github.com/pvolok/mprocs[mprocs]
+== How does development even work?
 
-It's recommended to run the project using mprocs:
+I do not have a user-friendly quick start yet. This is because the structure of the project
+is currently evolving. Instead, I'll describe what I've done so you can figure it out from
+context. Reduce is written within a monorepo. It's written using 2 languages: Rust and Python. And
+linked together using pyo3. Eventually the project will be structured the following way:
 
-[source,bash]
-----
-mprocs
-----
+  On the rust side, there is the reduce-core crate together with extension modules. Then there
+  is the pyreduce package which builds a crate and binds it with Python resulting in a package
+  that can be uploaded to PyPi. On the Python side, there are extension modules. And finally
+  there is reduce-standard. This is the standard distribution of reduce. It contains all actively
+  supported rust extension modules already. Python modules need to be installed by the end user.
 
-This will start all required programs within a single terminal window. Please reference
-mprocs itself for further information about how to interact with the multiple windows.
+Each element of this setup has a distinct purpose. Rust is partially used for speed, but the
+primary purpose is type correctness. Any parts having strong security requirements will be
+done within reduce-core. The most common extension modules will also reside in Rust. The Python
+binding has 2 purposes. First of all, allow for python extension modules. Python modules will
+be slower, but are ideal for quick iteration. Also, python modules will be dynamically loaded,
+making version management easier. The second is configuration. Python is better suited for
+handling configuation tasks. The reason for the multiple Rust crates is to allow advanced
+developers to take over default behavior. Say you want to write your own version of a primary
+module, or you require the speed in Rust. You can create your own project, and directly link
+with reduce-core and any extension modules you still want to use. You'll have to reimplement
+the Python bindings, or you can even choose to forgo Python and write all logic in Rust only.
 
-If you prefer to manually manage the processes, you should make sure to run the following commands in separate sessions:
-
-[source,bash]
-----
-docker compose up
-npm run tailwind
-# Run cargo directly, requires manual restarting
-cargo r
-# Use cargo-watch for automatic restarts
-cargo watch -x r
-----
-
-[NOTE]
-This doesn't include clippy, which you may want to run manually.
-
-There is one more step required before the build will succeed. For that run the following command:
-
-[source,bash]
-----
-sqlx migrate run
-----
-
-This will run migrations, which is required for the build process to succeed.
-
-The 3 commands are all required to run the project as a whole. Docker compose is used for the
-database. This will run 2 containers, one is a Postgres database, the other is an adminer instance.
-The latter can be used to manually inspect the database, and can be accessed on port 8080. Note that
-this is purely meant for development. The credentials for the database in development mode are
-"user" and "password".
-
-The tailwind command in npm is used to watch changes in the `templates/` directory, and then
-rebuild the resulting css file which is then served from within the application.
-
-Cargo r runs the server itself. It requires that the database is online, As mentioned already, SQLx
-uses the actual database connection during compilation. If you reset the database, make sure to run
-`sqlx migrate run` again. The CSS is compiled into the binary itself, so you also need to compile
-the tailwind css sheet.
-
-== Deployment
-
-No official binaries or containers are provided at this point in time. It's not recommended to run
-any production build of Reduce at this time, as it is in very early development.
-
-First make sure you have the Rust tool chain installed. Refer to the quick setup section for more
-information.
-
-Build the project in release mode, by running:
-
-[source,bash]
-----
-cargo build --release
-----
-
-Then it's time to set up the server. How this is done depends on where and how you host the server.
-Before you set up the server itself, make sure you have a postgres database available. There are
-several ways to do this, I suggest you do your own research. Chances are that your hosting provider
-already has a database available.
-
-To deploy the server itself, copy the resulting binary, located at `target/release/reduce`, to your
-deployment server. The server requires the following environment variables to be set:
-
-[source,bash]
-----
-DATABASE_URL=postgres://user:password@domain:5432/database_name
-----
-
-Replace the information with the information for your database. You should have either created
-these yourself, or received them from your hosting provider, depending on how you set up the
-database. If you are unsure as to what these are, please refer to the documentation for Postgres if
-you set it up yourself, or ask your hosting provider for additional information.
-
-Now make sure the server is started, preferably upon server restart, an you should have a working
-deployment server. Migrations are embedded in the binary, and work automatically. So no need to
-setup any tables manually.
+For rendering, HTMX and tailwind are used. I've also set up a docker compose configuration to
+run a Postgres server locally during development. All of this is handled in the files matching
+*.mprocs.yaml. To understand the details, look in these files. They contain the latest commands
+to manage all processes.
