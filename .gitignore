@@ -1,6 +1,6 @@
 /target
 /.env
-/static/style.css
+/*/static/style.css
 
 # Logs
 logs
