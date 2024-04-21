@@ -23,8 +23,8 @@ use self::handler::{
 };
 
 mod database;
-mod logic;
 mod handler;
+mod logic;
 mod shared;
 mod template;
 

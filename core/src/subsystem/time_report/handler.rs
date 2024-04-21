@@ -46,9 +46,14 @@ use crate::{
 use self::params::DeleteIndexParams;
 
 use super::{
-    database::{delete_time_entries, fetch_category_names, fetch_time_report_comments, insert_time_entries_with_end_times},
+    database::{
+        delete_time_entries, fetch_category_names, fetch_time_report_comments,
+        insert_time_entries_with_end_times,
+    },
     template::{
-        AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate, TimeReportIndexTemplate, TimeReportInsertResultTemplate, TimeReportPickerTemplate, TimeReportsTemplate
+        AddTimeReportExtraItemTemplate, AddTimeReportTemplate, TimeReportDeleteResultTemplate,
+        TimeReportIndexTemplate, TimeReportInsertResultTemplate, TimeReportPickerTemplate,
+        TimeReportsTemplate,
     },
 };
 

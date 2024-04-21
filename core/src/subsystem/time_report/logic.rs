@@ -61,14 +61,7 @@ mod test {
 
     #[test]
     fn test_parse_time() {
-        let input = [
-            "0915",
-            "1245",
-            "930",
-            "10:30",
-            "07:45",
-            "9:00",
-        ];
+        let input = ["0915", "1245", "930", "10:30", "07:45", "9:00"];
 
         let expected = [
             NaiveTime::from_hms_opt(9, 15, 0).unwrap(),

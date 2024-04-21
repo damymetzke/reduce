@@ -31,11 +31,8 @@ use tracing_subscriber::FmtSubscriber;
 #[template(path = "index.html", escape = "none")]
 struct IndexTemplate;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+pub fn setup_tracing() -> Result<(), Box<dyn Error>> {
     let is_production = matches!(env::var("ENVIRONMENT").as_deref(), Ok("production"));
-    dbg!(is_production);
-
     let mut _guard = None;
     let tracing_subscriber: Box<dyn Subscriber + Send + Sync + 'static> =
         match env::var("LOG_DIRECTORY") {
@@ -59,7 +56,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
 
     tracing::subscriber::set_global_default(tracing_subscriber)?;
+    Ok(())
+}
 
+pub async fn start_server() -> Result<(), Box<dyn Error>> {
     let db_url = "postgres://user:password@localhost:5432/reduce_dev";
     let db_pool = sqlx::postgres::PgPool::connect(db_url).await?;
 
@@ -74,6 +74,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("Starting server listening on port 3000");
     println!("You can open the server using the URL <http://localhost:3000>");
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await?;
     Ok(())
 }

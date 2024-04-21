@@ -1,0 +1,20 @@
+
+[project]
+name = "reduce-standard"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Damy Metzke", email = "damy.metzke@gmail.com"},
+]
+dependencies = [
+    "pyreduce @ file:///${PROJECT_ROOT}/../pyreduce",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "AGPL-3.0-or-later"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
