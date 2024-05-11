@@ -2,7 +2,7 @@
   "name": "reduce",
   "version": "1.0.0",
   "scripts": {
-    "core:tailwind": "tailwindcss -c core/tailwind.config.js -i core/css/index.css -o core/static/style.css -w"
+    "reduce-core:tailwind": "tailwindcss -c reduce-core/tailwind.config.js -i reduce-core/css/index.css -o reduce-core/static/style.css -w"
   },
   "private": true,
   "devDependencies": {

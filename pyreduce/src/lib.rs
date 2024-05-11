@@ -25,16 +25,9 @@ fn start_server() -> PyResult<PyObject> {
     })
 }
 
-#[pyfunction]
-fn test() -> PyResult<String> {
-    Ok("Hello world!".into())
-}
-
 /// A Python module implemented in Rust.
 #[pymodule]
 fn pyreduce(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(start_server, m)?)?;
-    m.add_function(wrap_pyfunction!(test, m)?)?;
-    m.add_class::<ServerRuntimeHandle>()?;
     Ok(())
 }

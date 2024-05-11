@@ -10,5 +10,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = "0.20.0"
-reduce-core = { version = "0.1.0", path = "../core" }
+reduce-core = { version = "0.1.0", path = "../reduce-core" }
 tokio = "1.37.0"

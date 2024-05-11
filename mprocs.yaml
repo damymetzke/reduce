@@ -1,0 +1,5 @@
+procs:
+  docker:
+    cmd: ["docker", "compose", "up"]
+  tailwind:
+    cmd: ["npm", "run", "reduce-core:tailwind"]
