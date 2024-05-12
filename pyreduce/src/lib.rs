@@ -1,4 +1,5 @@
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
+use reduce_core::ServerConfig as CoreConfig;
 use tokio::runtime::Runtime;
 
 #[allow(dead_code)]
@@ -33,8 +34,23 @@ impl ServerConfig {
         reduce_core::setup_tracing()
             .map_err(|error| PyErr::new::<PyRuntimeError, _>(error.to_string()))?;
         let runtime = Runtime::new()?;
+        let config = match self {
+            ServerConfig {
+                database_url: Some(database_url),
+                server_bind_address: Some(server_bind_address),
+                ..
+            } => CoreConfig {
+                db_url: database_url.as_str().into(),
+                server_bind_address: server_bind_address.as_str().into(),
+            },
+            _ => {
+                return Err(PyErr::new::<PyRuntimeError, _>(
+                    "Could not create server because of missing configuration",
+                ))
+            }
+        };
         runtime.spawn(async move {
-            if let Err(e) = reduce_core::start_server().await {
+            if let Err(e) = reduce_core::start_server(config).await {
                 eprintln!("Error starting server: {}", e);
             }
         });

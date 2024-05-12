@@ -59,9 +59,14 @@ pub fn setup_tracing() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub async fn start_server() -> Result<(), Box<dyn Error>> {
-    let db_url = "postgres://user:password@localhost:5432/reduce_dev";
-    let db_pool = sqlx::postgres::PgPool::connect(db_url).await?;
+pub struct ServerConfig {
+    pub db_url: Box<str>,
+    pub server_bind_address: Box<str>,
+}
+
+pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
+    let db_url = config.db_url;
+    let db_pool = sqlx::postgres::PgPool::connect(&db_url).await?;
 
     sqlx::migrate!("./migrations").run(&db_pool).await?;
 
@@ -71,9 +76,9 @@ pub async fn start_server() -> Result<(), Box<dyn Error>> {
     let app = routes::register(app).layer(Extension(db_pool));
 
     // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("Starting server listening on port 3000");
-    println!("You can open the server using the URL <http://localhost:3000>");
+    let listener = tokio::net::TcpListener::bind(&*config.server_bind_address)
+        .await
+        .unwrap();
     axum::serve(listener, app).await?;
     Ok(())
 }
