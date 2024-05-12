@@ -1,5 +1,7 @@
 procs:
   docker:
     cmd: ["docker", "compose", "up"]
+    stop:
+      send-keys: ["<C-c>"]
   tailwind:
     cmd: ["npm", "run", "reduce-core:tailwind"]
