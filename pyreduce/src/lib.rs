@@ -5,29 +5,49 @@ use tokio::runtime::Runtime;
 #[pyclass]
 struct ServerRuntimeHandle(Runtime);
 
-#[pyfunction]
-fn start_server() -> PyResult<PyObject> {
-    reduce_core::setup_tracing()
-        .map_err(|error| PyErr::new::<PyRuntimeError, _>(error.to_string()))?;
-    let runtime = Runtime::new()?;
-    runtime.spawn(async move {
-        if let Err(e) = reduce_core::start_server().await {
-            eprintln!("Error starting server: {}", e);
-        }
-    });
+#[pyclass]
+#[derive(Debug, Default)]
+pub struct ServerConfig {
+    database_url: Option<String>,
+    server_bind_address: Option<String>,
+    runtime: Option<Runtime>,
+}
 
-    Python::with_gil(|py| {
-        // Convert the Arc to a PyCell, which allows it to be returned as a Python object
-        let py_obj = PyCell::new(py, ServerRuntimeHandle(runtime))?;
+#[pymethods]
+impl ServerConfig {
+    #[new]
+    fn new() -> ServerConfig {
+        ServerConfig::default()
+    }
 
-        // Return the PyCell as a PyResult<PyObject>
-        Ok(py_obj.into())
-    })
+    fn database_url(&mut self, value: String) {
+        self.database_url = Some(value);
+    }
+
+    fn server_bind_address(&mut self, value: String) {
+        self.server_bind_address = Some(value);
+    }
+
+    fn start_server(&mut self) -> PyResult<()> {
+        println!("{:?}", self);
+        reduce_core::setup_tracing()
+            .map_err(|error| PyErr::new::<PyRuntimeError, _>(error.to_string()))?;
+        let runtime = Runtime::new()?;
+        runtime.spawn(async move {
+            if let Err(e) = reduce_core::start_server().await {
+                eprintln!("Error starting server: {}", e);
+            }
+        });
+
+        self.runtime = Some(runtime);
+
+        Ok(())
+    }
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn pyreduce(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(start_server, m)?)?;
+    m.add_class::<ServerConfig>()?;
     Ok(())
 }
