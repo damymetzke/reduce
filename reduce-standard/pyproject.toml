@@ -18,3 +18,7 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "watchdog>=4.0.0",
+]

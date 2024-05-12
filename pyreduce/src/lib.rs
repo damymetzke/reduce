@@ -30,7 +30,6 @@ impl ServerConfig {
     }
 
     fn start_server(&mut self) -> PyResult<()> {
-        println!("{:?}", self);
         reduce_core::setup_tracing()
             .map_err(|error| PyErr::new::<PyRuntimeError, _>(error.to_string()))?;
         let runtime = Runtime::new()?;

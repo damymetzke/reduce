@@ -59,6 +59,7 @@ pub fn setup_tracing() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct ServerConfig {
     pub db_url: Box<str>,
     pub server_bind_address: Box<str>,

@@ -5,3 +5,7 @@ procs:
       send-keys: ["<C-c>"]
   tailwind:
     cmd: ["npm", "run", "reduce-core:tailwind"]
+  standard:
+    cmd: ["pdm", "run", "python", "watch.py"]
+    cwd: "./reduce-standard"
+    autostart: false
