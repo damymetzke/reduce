@@ -1,0 +1,66 @@
+= Maintainers guide
+
+This guide is here to help anyone that wants to maintain this project.
+It contains all information required for keeping everything up to date.
+
+== Frequent updates
+
+This project mixes several languages and thus tooling together.  You will have
+to update the project by updating multiple of these tools.  After updating,
+make sure all packages still work by running all required tests.  It's project
+practice to apply these updates once a month, or directly if a security
+vulnerability has been found in one of the (transitive) dependencies of
+this project.
+
+.Rust
+
+  Rust uses Cargo a workspace for managing dependencies.  Run +cargo update+
+  in the project root, and it will update all crates in the project.
+  Note that this will also include the Rust side of any Maturin package.
+
+.Python
+
+  For Python, 2 managers are used.  The first is maturin, but by practice
+  these shouldn't have any python dependencies.  Therefore, you should
+  only update packages managed by PDM.  To update these packages, you
+  should run PDM update in each individual package.  A list of all PDM
+  packages can be found in +package-status.toml+ at the root of the project.
+  Plans are to also use a workspace for python dependencies, but it requires
+  https://github.com/pdm-project/pdm/issues/1505 to be implemented.
+
+.JavaScript
+
+  Currently, javaScript is being used for building the tailwind content only.
+  It's stored in the root of the project, and can be updated by running
+  +npm update+.
+
+== Thorough updates
+
+The update command will only install versions compatible with the specified
+constraints.  This will eventually leave you with an unsupported version
+of the package.  For that reason, you should periodically be checking for
+major version upgrades.  This may require porting, which is what makes this
+the most time consuming aspect of maintenance or second most time consuming
+if you're also accepting contribution.  Whether or not you want to move to a
+newer version is up to your own discretion.  Packages may have some versions
+dedicated to LTS, which are typically preferred over non-LTS versions when
+available.  It is project practice to check for major version updates every
+week; to either update directly if there aren't too many conflicts, or to
+create an issue if porting will take time. You have to manually update each
+projects manifest manually for this.  Each language has a way to check for
+outdated versions.
+
+.Rust
+
+  It's recommended to use the https://github.com/kbknapp/cargo-outdated tool.
+  This tool works on the root of the project using the Cargo workspace.
+
+.Python
+
+  Outdated checks are built into the tool.  Run +pdm outdated+ on each PDM
+  managed project.
+
+.JavaScript
+
+  Outdated checks are built into NPM.  Run +npm outdated+ on the root of
+  the project.
