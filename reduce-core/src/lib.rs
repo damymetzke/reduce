@@ -72,7 +72,9 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
     sqlx::migrate!("./migrations").run(&db_pool).await?;
 
     let app = Router::new();
-    let app = app.nest("/time-reports", subsystem::time_report::routes());
+    let app = app
+        .nest("/time-reports", subsystem::time_report::routes())
+        .nest("/upkeep", subsystem::upkeep::routes());
 
     let app = routes::register(app).layer(Extension(db_pool));
 

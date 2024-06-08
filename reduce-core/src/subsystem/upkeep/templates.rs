@@ -16,5 +16,17 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod time_report;
-pub mod upkeep;
+use askama::Template;
+
+pub struct PartItem {
+    pub title: Box<str>,
+    pub date_relation: Box<str>,
+    pub rate: Box<str>,
+}
+
+#[derive(Template)]
+#[template(path = "modules/upkeep/index.html")]
+pub struct IndexTemplate {
+    pub due_items: Box<[PartItem]>,
+    pub backlog: Box<[PartItem]>,
+}

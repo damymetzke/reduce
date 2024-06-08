@@ -16,5 +16,13 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod time_report;
-pub mod upkeep;
+use axum::{routing::get, Router};
+
+use self::handler::get_index;
+
+mod handler;
+mod templates;
+
+pub fn routes() -> Router {
+    Router::new().route("/", get(get_index))
+}

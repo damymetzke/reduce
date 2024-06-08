@@ -1,0 +1,78 @@
+{#
+  Reduce: Improve productivity by reducing complexity
+  Copyright (C) 2024  Damy Metzke
+
+  This work is dual licensed under GPL 2.0 OR Apache 2.0 (or any later version).
+  You can choose between one of them if you choose to use this work.
+
+
+  AGPL 3.0 or later:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+  Apache 2.0:
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+#}
+
+{% extends "layouts/default.html" %}
+
+{% block head %}
+  <title>Upkeep</title>
+{% endblock %}
+
+{% block content %}
+  <main class="grid grid-cols-3 gap-4 mx-12">
+    <h1 class="text-center text-3xl underline font-bold col-span-3">Reduce - Upkeep</h1>
+
+    <h2 class="text-center text-2xl font-bold">Now</h2>
+    <h2 class="text-center text-2xl font-bold">Backlog</h2>
+    <h2 class="text-center text-2xl font-bold">Create</h2>
+
+    <div class="flex flex-col gap-4">
+    {% for item in due_items %}
+      {% include "modules/upkeep/item-card.part.html"%}
+    {% endfor %}
+    </div>
+    <div class="flex flex-col gap-4">
+    {% for item in backlog %}
+      {% include "modules/upkeep/item-card.part.html"%}
+    {% endfor %}
+    </div>
+    <div>
+      <form class="grid grid-cols-6 gap-4">
+        <div class="flex flex-row items-center justify-end">
+          <label for="new-title" class="font-bold text-right">Title</label>
+        </div>
+        <input id="new-title" type="text" name="title" class="px-2 py-1 border-2 border-black rounded-md col-span-5 text-lg">
+        <div class="flex flex-row items-center justify-end">
+          <label for="new-rate" class="font-bold text-right">Rate</label>
+        </div>
+        <input id="new-rate" type="text" name="rate" class="px-2 py-1 border-2 border-black rounded-md col-span-5 text-lg">
+        <button class="col-start-3 col-end-5 text-xl font-bold border-4 border-black rounded-lg" type="submit">Create new item</button>
+      </form>
+    </div>
+  </main>
+{% endblock %}
