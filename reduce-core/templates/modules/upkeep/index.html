@@ -44,7 +44,7 @@
 {% endblock %}
 
 {% block content %}
-  <main class="grid grid-cols-3 gap-4 mx-12">
+  <main class="grid grid-cols-3 gap-4 mx-12" id="upkeep-main">
     <h1 class="text-center text-3xl underline font-bold col-span-3">Reduce - Upkeep</h1>
 
     <h2 class="text-center text-2xl font-bold">Now</h2>
@@ -62,15 +62,15 @@
     {% endfor %}
     </div>
     <div>
-      <form class="grid grid-cols-6 gap-4">
+      <form class="grid grid-cols-6 gap-4" hx-post="#" hx-target="#upkeep-main" hx-select="#upkeep-main" hx-swap="outerHTML">
         <div class="flex flex-row items-center justify-end">
           <label for="new-title" class="font-bold text-right">Title</label>
         </div>
         <input id="new-title" type="text" name="title" class="px-2 py-1 border-2 border-black rounded-md col-span-5 text-lg">
         <div class="flex flex-row items-center justify-end">
-          <label for="new-rate" class="font-bold text-right">Rate</label>
+          <label for="new-cooldown" class="font-bold text-right">Cooldown (Days)</label>
         </div>
-        <input id="new-rate" type="text" name="rate" class="px-2 py-1 border-2 border-black rounded-md col-span-5 text-lg">
+        <input id="new-cooldown" type="number" name="cooldown" class="px-2 py-1 border-2 border-black rounded-md col-span-5 text-lg">
         <button class="col-start-3 col-end-5 text-xl font-bold border-4 border-black rounded-lg" type="submit">Create new item</button>
       </form>
     </div>

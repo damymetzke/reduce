@@ -16,15 +16,18 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+use std::sync::Arc;
+
 use askama_axum::IntoResponse;
-use axum::Extension;
-use chrono::Local;
+use axum::{debug_handler, Extension, Form};
+use chrono::{Duration, Local};
+use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
 use crate::error::AppResult;
 
 use super::{
-    database::fetch_upkeep_items,
+    database::{fetch_upkeep_items, insert_upkeep_item},
     templates::{IndexTemplate, PartItem},
 };
 
@@ -57,8 +60,20 @@ pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<
     let (due_items, backlog) = items.split_at(split_at);
     let due_items: Box<[_]> = due_items.into();
     let backlog: Box<[_]> = backlog.into();
-    Ok(IndexTemplate {
-        due_items,
-        backlog,
-    })
+    Ok(IndexTemplate { due_items, backlog })
+}
+
+#[derive(Deserialize)]
+pub struct PostIndexForm {
+    title: Arc<str>,
+    cooldown: i32,
+}
+
+pub async fn post_index(
+    pool: Extension<Pool<Postgres>>,
+    Form(PostIndexForm { title, cooldown }): Form<PostIndexForm>,
+) -> AppResult<impl IntoResponse> {
+    let due = Local::now().date_naive() + Duration::days(cooldown as i64);
+    insert_upkeep_item(&pool.0, title.as_ref(), cooldown, &due).await?;
+    get_index(pool).await
 }

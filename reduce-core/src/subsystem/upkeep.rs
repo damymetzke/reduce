@@ -18,12 +18,12 @@
 
 use axum::{routing::get, Router};
 
-use self::handler::get_index;
+use self::handler::{get_index, post_index};
 
 mod database;
 mod handler;
 mod templates;
 
 pub fn routes() -> Router {
-    Router::new().route("/", get(get_index))
+    Router::new().route("/", get(get_index).post(post_index))
 }

@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use chrono::NaiveDate;
-use sqlx::{query_as, Executor, Postgres};
+use sqlx::{query, query_as, Executor, Postgres};
 
 pub struct FetchUpkeepItem {
     pub description: Arc<str>,
@@ -42,4 +42,27 @@ where
     .fetch_all(executor)
     .await?
     .into())
+}
+
+pub async fn insert_upkeep_item<'a, T>(
+    executor: T,
+    description: &str,
+    cooldown_days: i32,
+    due: &NaiveDate,
+) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        INSERT INTO upkeep_items (description, cooldown_days, due)
+        VALUES ($1, $2, $3)
+        ",
+        description,
+        cooldown_days,
+        due,
+    }
+    .execute(executor)
+    .await?;
+    Ok(())
 }
