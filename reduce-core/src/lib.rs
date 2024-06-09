@@ -27,9 +27,16 @@ use axum::{Extension, Router};
 use tracing::{Level, Subscriber};
 use tracing_subscriber::FmtSubscriber;
 
+struct PartModule {
+    href: Box<str>,
+    title: Box<str>,
+}
+
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
-struct IndexTemplate;
+struct IndexTemplate{
+    modules: Box<[PartModule]>
+}
 
 pub fn setup_tracing() -> Result<(), Box<dyn Error>> {
     let is_production = matches!(env::var("ENVIRONMENT").as_deref(), Ok("production"));
