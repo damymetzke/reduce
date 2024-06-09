@@ -27,7 +27,7 @@ use sqlx::{Pool, Postgres};
 use crate::error::AppResult;
 
 use super::{
-    database::{fetch_upkeep_items, insert_upkeep_item},
+    database::{complete_upkeep_item, fetch_upkeep_items, insert_upkeep_item},
     templates::{IndexTemplate, PartItem},
 };
 
@@ -38,7 +38,9 @@ pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<
     let items: Box<_> = items
         .iter()
         .map(|item| {
-            if item.due <= today {
+            let is_due = item.due <= today;
+            
+            if is_due {
                 split_at += 1;
             };
             let due_difference = (item.due - today).num_days();
@@ -50,9 +52,11 @@ pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<
                 due => format!("Due in {} days", due).into(),
             };
             PartItem {
+                id: item.id,
                 description: item.description.clone(),
                 due,
                 cooldown: format!("Cooldown: {} days", item.cooldown_days).into(),
+                render_complete: is_due,
             }
         })
         .collect();
@@ -75,5 +79,18 @@ pub async fn post_index(
 ) -> AppResult<impl IntoResponse> {
     let due = Local::now().date_naive() + Duration::days(cooldown as i64);
     insert_upkeep_item(&pool.0, title.as_ref(), cooldown, &due).await?;
+    get_index(pool).await
+}
+
+#[derive(Deserialize)]
+pub struct PostCompleteForm {
+    item_id: i32,
+}
+
+pub async fn post_complete(
+    pool: Extension<Pool<Postgres>>,
+    Form(PostCompleteForm { item_id }): Form<PostCompleteForm>,
+) -> AppResult<impl IntoResponse> {
+    complete_upkeep_item(&pool.0, item_id).await?;
     get_index(pool).await
 }

@@ -23,6 +23,7 @@ use chrono::NaiveDate;
 use sqlx::{query, query_as, Executor, Postgres};
 
 pub struct FetchUpkeepItem {
+    pub id: i32,
     pub description: Arc<str>,
     pub cooldown_days: i32,
     pub due: NaiveDate,
@@ -35,7 +36,7 @@ where
     Ok(query_as! {
         FetchUpkeepItem,
         "
-        SELECT description, cooldown_days, due FROM upkeep_items
+        SELECT id, description, cooldown_days, due FROM upkeep_items
         ORDER BY due ASC
         "
     }
@@ -61,6 +62,23 @@ where
         description,
         cooldown_days,
         due,
+    }
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn complete_upkeep_item<'a, T>(executor: T, id: i32) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        UPDATE upkeep_items
+        SET due = CURRENT_DATE + cooldown_days * INTERVAL '1 day'
+        WHERE id = $1
+        ",
+        id
     }
     .execute(executor)
     .await?;

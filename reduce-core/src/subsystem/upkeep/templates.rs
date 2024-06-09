@@ -22,9 +22,11 @@ use askama::Template;
 
 #[derive(Clone)]
 pub struct PartItem {
+    pub id: i32,
     pub description: Arc<str>,
     pub due: Arc<str>,
     pub cooldown: Arc<str>,
+    pub render_complete: bool,
 }
 
 #[derive(Template)]

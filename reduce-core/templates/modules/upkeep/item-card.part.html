@@ -37,8 +37,27 @@
   limitations under the License.
 #}
 
-<div class="p-2 border-2 border-black rounded-2xl bg-view-background-alternate flex flex-col">
-  <p class="text-lg font-bold underline">{{ item.description }}</p>
-  <p class="text-lg">{{ item.due }}</p>
-  <p class="text-lg">{{ item.cooldown }}</p>
+<div class="p-2 border-2 border-black rounded-2xl bg-view-background-alternate flex flex-row, justify-between">
+  <div class="flex flex-col">
+    <p class="text-lg font-bold underline">{{ item.description }}</p>
+    <p class="text-lg">{{ item.due }}</p>
+    <p class="text-lg">{{ item.cooldown }}</p>
+  </div>
+  <form class="flex flex-col">
+    <p class="text-lg font-bold text-right">...</p>
+    {% if item.render_complete %}
+      <input type="hidden" name="item_id" value="{{ item.id }}">
+      <button
+        class="text-lg font-bold text-right"
+        hx-post="upkeep/complete"
+        hx-target="#upkeep-due"
+        hx-select="#upkeep-due"
+        hx-swap="outerHTML"
+        hx-select-oob="#upkeep-backlog"
+      >
+        complete
+      </button>
+    {% endif %}
+  </form>
+
 </div>
