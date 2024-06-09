@@ -16,14 +16,30 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use axum::{routing::get, Router};
+use std::sync::Arc;
 
-use self::handler::get_index;
+use anyhow::Result;
+use chrono::NaiveDate;
+use sqlx::{query_as, Executor, Postgres};
 
-mod database;
-mod handler;
-mod templates;
+pub struct FetchUpkeepItem {
+    pub description: Arc<str>,
+    pub cooldown_days: i32,
+    pub due: NaiveDate,
+}
 
-pub fn routes() -> Router {
-    Router::new().route("/", get(get_index))
+pub async fn fetch_upkeep_items<'a, T>(executor: T) -> Result<Arc<[FetchUpkeepItem]>>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    Ok(query_as! {
+        FetchUpkeepItem,
+        "
+        SELECT description, cooldown_days, due FROM upkeep_items
+        ORDER BY due ASC
+        "
+    }
+    .fetch_all(executor)
+    .await?
+    .into())
 }

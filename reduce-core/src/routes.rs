@@ -25,13 +25,13 @@ async fn index() -> IndexTemplate {
     IndexTemplate {
         modules: [
             PartModule {
-            href: "/time-reports".into(),
-            title: "Time".into(),
-        },
+                href: "/time-reports".into(),
+                title: "Time".into(),
+            },
             PartModule {
-            href: "/upkeep".into(),
-            title: "Upkeep".into(),
-        },
+                href: "/upkeep".into(),
+                title: "Upkeep".into(),
+            },
         ]
         .into(),
     }

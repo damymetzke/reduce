@@ -16,12 +16,15 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+use std::sync::Arc;
+
 use askama::Template;
 
+#[derive(Clone)]
 pub struct PartItem {
-    pub title: Box<str>,
-    pub date_relation: Box<str>,
-    pub rate: Box<str>,
+    pub description: Arc<str>,
+    pub due: Arc<str>,
+    pub cooldown: Arc<str>,
 }
 
 #[derive(Template)]

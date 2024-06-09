@@ -19,3 +19,10 @@ CREATE TABLE time_comments (
     content TEXT,
     PRIMARY KEY(project_id, day)
 );
+
+CREATE TABLE upkeep_items (
+  id SERIAL PRIMARY KEY,
+  description VARCHAR(255) NOT NULL,
+  cooldown_days INT NOT NULL,
+  due DATE NOT NULL
+);

@@ -17,42 +17,48 @@
 */
 
 use askama_axum::IntoResponse;
+use axum::Extension;
+use chrono::Local;
+use sqlx::{Pool, Postgres};
 
 use crate::error::AppResult;
 
-use super::templates::{IndexTemplate, PartItem};
+use super::{
+    database::fetch_upkeep_items,
+    templates::{IndexTemplate, PartItem},
+};
 
-pub async fn get_index() -> AppResult<impl IntoResponse> {
+pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<impl IntoResponse> {
+    let items = fetch_upkeep_items(&pool).await?;
+    let mut split_at = 0;
+    let today = Local::now().date_naive();
+    let items: Box<_> = items
+        .iter()
+        .map(|item| {
+            if item.due <= today {
+                split_at += 1;
+            };
+            let due_difference = (item.due - today).num_days();
+            let due = match due_difference {
+                -1 => "Due yesterday".into(),
+                0 => "Due today".into(),
+                1 => "Due tomorrow".into(),
+                due if due < 0 => format!("Due {} days ago", -due).into(),
+                due => format!("Due in {} days", due).into(),
+            };
+            PartItem {
+                description: item.description.clone(),
+                due,
+                cooldown: format!("Cooldown: {} days", item.cooldown_days).into(),
+            }
+        })
+        .collect();
+
+    let (due_items, backlog) = items.split_at(split_at);
+    let due_items: Box<[_]> = due_items.into();
+    let backlog: Box<[_]> = backlog.into();
     Ok(IndexTemplate {
-        due_items: Box::from([
-            PartItem {
-                title: Box::from("Task one"),
-                date_relation: Box::from("Due 2 days ago"),
-                rate: Box::from("Every 7 days"),
-            },
-            PartItem {
-                title: Box::from("Task two"),
-                date_relation: Box::from("Due today"),
-                rate: Box::from("Every month"),
-            },
-        ]),
-        backlog: Box::from([
-            PartItem {
-                title: Box::from("Task three"),
-                date_relation: Box::from("Due tomorrow"),
-                rate: Box::from("Every 15 days"),
-            },
-            PartItem {
-                title: Box::from("Task four"),
-                date_relation: Box::from("Due in 2 days"),
-                rate: Box::from("Every week"),
-            },
-            PartItem {
-                title: Box::from("Task five"),
-                date_relation: Box::from("Due in 17 days"),
-                rate: Box::from("Every Quarter"),
-            },
-        ]),
+        due_items,
+        backlog,
     })
 }
-
