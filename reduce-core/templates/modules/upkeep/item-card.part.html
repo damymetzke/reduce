@@ -44,7 +44,45 @@
     <p class="text-lg">{{ item.cooldown }}</p>
   </div>
   <form class="flex flex-col">
-    <p class="text-lg font-bold text-right">...</p>
+    <div x-data="{open: false}" class="relative">
+      <button type="button" @click="open = !open" class="text-lg font-bold text-right px-2 py-1 bg-white border-black border-2">...</button>
+
+      <div
+        x-show="open"
+        @click.outside="open = false"
+        class="absolute left-14 top-0 z-10"
+      >
+        <div class="bg-white border-2 border-black rounded-md p-2 grid grid-flow-col auto-cols-min grid-rows-2 gap-2 w-min h-min">
+          <div></div>
+          <input
+            id="due-date"
+            type="date"
+            name="due-date"
+            class="border-2 border-black rounded-sm w-full"
+          >
+          <button
+            class="text-lg font-bold text-right border-2 border-black rounded-md w-full px-1"
+            hx-delete="upkeep/{{item.id}}"
+            hx-target="#upkeep-due"
+            hx-select="#upkeep-due"
+            hx-swap="outerHTML"
+            hx-select-oob="#upkeep-backlog"
+          >
+            Delete
+          </button>
+          <button
+            class="text-lg font-bold text-right border-2 border-black rounded-md w-full px-1"
+            hx-patch="upkeep/{{item.id}}"
+            hx-target="#upkeep-due"
+            hx-select="#upkeep-due"
+            hx-swap="outerHTML"
+            hx-select-oob="#upkeep-backlog"
+          >
+            Update&nbsp;due&nbsp;date
+          </button>
+        </div>
+      </div>
+    </div>
     {% if item.render_complete %}
       <input type="hidden" name="item_id" value="{{ item.id }}">
       <button
