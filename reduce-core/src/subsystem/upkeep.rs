@@ -16,14 +16,20 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use axum::{routing::{get, post}, Router};
+use axum::{
+    routing::{delete, get, post},
+    Router,
+};
 
-use self::handler::{get_index, post_complete, post_index};
+use self::handler::{delete_item, get_index, patch_item, post_complete, post_index};
 
 mod database;
 mod handler;
 mod templates;
 
 pub fn routes() -> Router {
-    Router::new().route("/", get(get_index).post(post_index)).route("/complete", post(post_complete))
+    Router::new()
+        .route("/", get(get_index).post(post_index))
+        .route("/complete/:id", post(post_complete))
+        .route("/:id", delete(delete_item).patch(patch_item))
 }

@@ -84,3 +84,37 @@ where
     .await?;
     Ok(())
 }
+
+pub async fn delete_upkeep_item<'a, T>(executor: T, id: i32) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        DELETE FROM upkeep_items
+        WHERE id = $1
+        ",
+        id
+    }
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn patch_due_date_upkeep_item<'a, T>(executor: T, id: i32, due: &NaiveDate) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        UPDATE upkeep_items
+        SET due = $2
+        WHERE id = $1
+        ",
+        id,
+        due
+    }
+    .execute(executor)
+    .await?;
+    Ok(())
+}

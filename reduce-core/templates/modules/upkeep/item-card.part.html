@@ -57,7 +57,7 @@
           <input
             id="due-date"
             type="date"
-            name="due-date"
+            name="due_date"
             class="border-2 border-black rounded-sm w-full"
           >
           <button
@@ -84,10 +84,9 @@
       </div>
     </div>
     {% if item.render_complete %}
-      <input type="hidden" name="item_id" value="{{ item.id }}">
       <button
         class="text-lg font-bold text-right"
-        hx-post="upkeep/complete"
+      hx-post="upkeep/complete/{{item.id}}"
         hx-target="#upkeep-due"
         hx-select="#upkeep-due"
         hx-swap="outerHTML"

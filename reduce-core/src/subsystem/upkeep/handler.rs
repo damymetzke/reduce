@@ -19,15 +19,15 @@
 use std::sync::Arc;
 
 use askama_axum::IntoResponse;
-use axum::{debug_handler, Extension, Form};
-use chrono::{Duration, Local};
+use axum::{debug_handler, extract::Path, Extension, Form};
+use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
 use crate::error::AppResult;
 
 use super::{
-    database::{complete_upkeep_item, fetch_upkeep_items, insert_upkeep_item},
+    database::{complete_upkeep_item, delete_upkeep_item, fetch_upkeep_items, insert_upkeep_item, patch_due_date_upkeep_item},
     templates::{IndexTemplate, PartItem},
 };
 
@@ -39,7 +39,7 @@ pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<
         .iter()
         .map(|item| {
             let is_due = item.due <= today;
-            
+
             if is_due {
                 split_at += 1;
             };
@@ -82,15 +82,33 @@ pub async fn post_index(
     get_index(pool).await
 }
 
-#[derive(Deserialize)]
-pub struct PostCompleteForm {
-    item_id: i32,
-}
-
 pub async fn post_complete(
     pool: Extension<Pool<Postgres>>,
-    Form(PostCompleteForm { item_id }): Form<PostCompleteForm>,
+    Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
-    complete_upkeep_item(&pool.0, item_id).await?;
+    complete_upkeep_item(&pool.0, id).await?;
+    get_index(pool).await
+}
+
+pub async fn delete_item(
+    pool: Extension<Pool<Postgres>>,
+    Path(id): Path<i32>,
+) -> AppResult<impl IntoResponse> {
+    delete_upkeep_item(&pool.0, id).await?;
+    get_index(pool).await
+}
+
+
+#[derive(Deserialize)]
+pub struct PatchItemForm {
+    due_date: NaiveDate,
+}
+
+pub async fn patch_item(
+    pool: Extension<Pool<Postgres>>,
+    Path(id): Path<i32>,
+    Form(PatchItemForm { due_date }): Form<PatchItemForm>,
+) -> AppResult<impl IntoResponse> {
+    patch_due_date_upkeep_item(&pool.0, id, &due_date).await?;
     get_index(pool).await
 }
