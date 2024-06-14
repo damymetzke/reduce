@@ -19,24 +19,19 @@
 mod error;
 mod routes;
 mod subsystem;
+mod template_extend;
 
-use std::{env, error::Error};
+use std::{env, error::Error, sync::Arc};
 
 use askama::Template;
 use axum::{Extension, Router};
+use template_extend::{set_navigation_links, NavigationLink};
 use tracing::{Level, Subscriber};
 use tracing_subscriber::FmtSubscriber;
 
-struct PartModule {
-    href: Box<str>,
-    title: Box<str>,
-}
-
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
-struct IndexTemplate{
-    modules: Box<[PartModule]>
-}
+struct IndexTemplate;
 
 pub fn setup_tracing() -> Result<(), Box<dyn Error>> {
     let is_production = matches!(env::var("ENVIRONMENT").as_deref(), Ok("production"));
@@ -84,6 +79,17 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
         .nest("/upkeep", subsystem::upkeep::routes());
 
     let app = routes::register(app).layer(Extension(db_pool));
+
+    set_navigation_links(Arc::from([
+        NavigationLink {
+            href: "/".into(),
+            title: "Home".into(),
+        },
+        NavigationLink {
+            href: "/upkeep".into(),
+            title: "Upkeep".into(),
+        },
+    ]))?;
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind(&*config.server_bind_address)

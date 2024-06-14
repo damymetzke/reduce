@@ -19,22 +19,10 @@
 use askama_axum::IntoResponse;
 use axum::{http::HeaderMap, routing::get, Router};
 
-use crate::{error::AppResult, IndexTemplate, PartModule};
+use crate::{error::AppResult, IndexTemplate};
 
 async fn index() -> IndexTemplate {
-    IndexTemplate {
-        modules: [
-            PartModule {
-                href: "/time-reports".into(),
-                title: "Time".into(),
-            },
-            PartModule {
-                href: "/upkeep".into(),
-                title: "Upkeep".into(),
-            },
-        ]
-        .into(),
-    }
+    IndexTemplate
 }
 
 async fn get_style() -> AppResult<impl IntoResponse> {

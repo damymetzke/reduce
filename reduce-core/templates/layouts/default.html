@@ -51,9 +51,18 @@
   {% endblock %}
 </head>
 <body class="flex flex-col pt-8">
+    <header>
+      <ul class="my-8 flex flex-row justify-center gap-2">
+        {% set links = crate::template_extend::get_navigation_links() %}
+        {% for link in links %}
+          <li class="bg-view-background-alternate border border-black rounded-xl text-lg font-bold"><a class="p-4" href="{{ link.href }}">{{ link.title }}</a></li>
+        {% endfor %}
+      </ul>
+      <hr class="border-gray-400 m-12">
+    </header>
     {% block content %}{% endblock %}
     <footer class="mt-auto mb-6">
-      <hr class="background-black height-2 width-full mx-12 my-12">
+      <hr class="height-2 width-full border-gray-400 m-12">
       <p class="text-center">
         The source for this web site is available at:
         <a href="https://github.com/damymetzke/reduce" class="
