@@ -18,6 +18,7 @@
 
 mod error;
 mod routes;
+mod sections;
 mod subsystem;
 mod template_extend;
 
@@ -25,6 +26,7 @@ use std::{env, error::Error, sync::Arc};
 
 use askama::Template;
 use axum::{Extension, Router};
+use sections::{ModuleRegistration, SectionRegistration};
 use template_extend::{set_navigation_links, NavigationLink};
 use tracing::{Level, Subscriber};
 use tracing_subscriber::FmtSubscriber;
@@ -73,14 +75,10 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
 
     sqlx::migrate!("./migrations").run(&db_pool).await?;
 
-    let app = Router::new();
-    let app = app
-        .nest("/time-reports", subsystem::time_report::routes())
-        .nest("/upkeep", subsystem::upkeep::routes());
+    let registrations = [sections::register()];
 
-    let app = routes::register(app).layer(Extension(db_pool));
-
-    set_navigation_links(Arc::from([
+    let mut app = Router::new();
+    let mut all_navigation_links = Vec::from([
         NavigationLink {
             href: "/".into(),
             title: "Home".into(),
@@ -89,7 +87,34 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
             href: "/upkeep".into(),
             title: "Upkeep".into(),
         },
-    ]))?;
+    ]);
+
+    for ModuleRegistration {
+        default_module_name,
+        sections,
+    } in registrations
+    {
+        let mut module_router = Router::new();
+        for SectionRegistration {
+            default_section_name,
+            router,
+            navigation_links,
+        } in sections.as_ref()
+        {
+            module_router = module_router.nest(default_section_name, router.to_owned());
+            all_navigation_links.extend_from_slice(navigation_links.as_ref())
+        }
+
+        app = app.nest(default_module_name, module_router);
+    }
+
+    let app = app
+        .nest("/time-reports", subsystem::time_report::routes())
+        .nest("/upkeep", subsystem::upkeep::routes());
+
+    let app = routes::register(app).layer(Extension(db_pool));
+
+    set_navigation_links(Arc::from(all_navigation_links))?;
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind(&*config.server_bind_address)

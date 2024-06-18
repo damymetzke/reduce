@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 
+#[derive(Debug, Clone)]
 pub struct NavigationLink {
     pub href: Box<str>,
     pub title: Box<str>,

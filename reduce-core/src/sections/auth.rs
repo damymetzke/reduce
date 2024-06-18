@@ -16,6 +16,31 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod time_report;
-pub mod upkeep;
+mod templates;
 
+use askama_axum::IntoResponse;
+use axum::{routing::get, Router};
+
+use crate::{error::AppResult, template_extend::NavigationLink};
+
+use self::templates::LoginTemplate;
+
+use super::SectionRegistration;
+
+pub async fn get_login() -> AppResult<impl IntoResponse> {
+    Ok(LoginTemplate)
+}
+
+pub fn register() -> SectionRegistration {
+    let router = Router::new().route("/login", get(get_login));
+
+    let navigation_links = Box::from([NavigationLink {
+        href: "/core/auth/login".into(),
+        title: "Login".into(),
+    }]);
+    SectionRegistration {
+        default_section_name: "/auth",
+        router,
+        navigation_links,
+    }
+}

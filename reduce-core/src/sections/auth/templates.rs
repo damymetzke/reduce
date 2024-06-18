@@ -16,6 +16,8 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod time_report;
-pub mod upkeep;
+use askama::Template;
 
+#[derive(Template)]
+#[template(path = "sections/auth/login.html")]
+pub struct LoginTemplate;

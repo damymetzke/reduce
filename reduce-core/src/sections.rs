@@ -16,6 +16,27 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod time_report;
-pub mod upkeep;
+mod auth;
 
+use axum::Router;
+
+use crate::template_extend::NavigationLink;
+
+pub struct SectionRegistration {
+    pub default_section_name: &'static str,
+    pub router: Router,
+    pub navigation_links: Box<[NavigationLink]>,
+}
+
+pub struct ModuleRegistration {
+    pub default_module_name: &'static str,
+    pub sections: Box<[SectionRegistration]>,
+}
+
+pub fn register() -> ModuleRegistration {
+    let sections = Box::from([auth::register()]);
+    ModuleRegistration {
+        default_module_name: "/core",
+        sections,
+    }
+}
