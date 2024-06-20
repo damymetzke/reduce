@@ -16,14 +16,21 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+mod database;
 mod templates;
 
+use std::sync::Arc;
+
+use anyhow::anyhow;
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use askama_axum::IntoResponse;
-use axum::{routing::get, Router};
+use axum::{http::HeaderMap, routing::get, Extension, Form, Router};
+use serde::Deserialize;
+use sqlx::{Pool, Postgres};
 
 use crate::{error::AppResult, template_extend::NavigationLink};
 
-use self::templates::LoginTemplate;
+use self::{database::fetch_account, templates::LoginTemplate};
 
 use super::SectionRegistration;
 
@@ -31,8 +38,37 @@ pub async fn get_login() -> AppResult<impl IntoResponse> {
     Ok(LoginTemplate)
 }
 
+#[derive(Deserialize)]
+pub struct PostLoginForm {
+    email: Arc<str>,
+    password: Arc<str>,
+}
+
+pub async fn post_login(
+    Extension(pool): Extension<Pool<Postgres>>,
+    Form(PostLoginForm { email, password }): Form<PostLoginForm>,
+) -> AppResult<impl IntoResponse> {
+    let account = fetch_account(&pool, &email).await?;
+
+    let result = Argon2::default().verify_password(
+        password.as_bytes(),
+        &PasswordHash::new(&account.password_hash)
+            .map_err(|error| anyhow!("Error with generating hash: {:?}", error))?,
+    );
+
+    let mut redirect_headers = HeaderMap::new();
+    redirect_headers.insert("HX-Location", "/".parse()?);
+    let none_headers = HeaderMap::new();
+
+    match result {
+        Ok(_) => Ok((redirect_headers, LoginTemplate)),
+        Err(_) => Ok((none_headers, LoginTemplate)),
+    }
+
+}
+
 pub fn register() -> SectionRegistration {
-    let router = Router::new().route("/login", get(get_login));
+    let router = Router::new().route("/login", get(get_login).post(post_login));
 
     let navigation_links = Box::from([NavigationLink {
         href: "/core/auth/login".into(),

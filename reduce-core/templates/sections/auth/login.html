@@ -26,15 +26,15 @@
   <main id="upkeep-main">
     <h1 class="text-center text-3xl underline font-bold col-span-3">Login</h1>
     <form
-      id="core-auth-form"
       class="
       grid grid-cols-2 grid-rows-3 gap-2
       mx-auto mt-8 max-w-5xl
       "
 
       hx-post="/core/auth/login"
-      hx-target="#core-auth-form"
-      hx-select="#core-auth-form"
+      hx-target="#upkeep-main"
+      hx-select="#upkeep-main"
+      hx-swap="outerHTML"
     >
     <label class="text-xl font-bold text-right" for="email">Email</label>
     <input class="text-xl py-1 px-2 border border-black" id="email" name="email" type="email">
