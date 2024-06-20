@@ -20,6 +20,8 @@ tower = "0.4.13"
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 once_cell = "1.19.0"
+rand = "0.8.5"
+base64 = "0.22.1"
 
 # Dependencies with features are defined as such to make it more readable
 [dependencies.sqlx]

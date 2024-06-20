@@ -19,9 +19,11 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use sqlx::{query_as, Executor, Postgres};
+use chrono::NaiveDateTime;
+use sqlx::{query, query_as, Executor, Postgres};
 
 pub struct FetchAccount {
+    pub id: i32,
     pub email: Arc<str>,
     pub password_hash: Arc<str>,
 }
@@ -33,7 +35,7 @@ where
     Ok(query_as! {
         FetchAccount,
         "
-        SELECT email, password_hash FROM accounts
+        SELECT id, email, password_hash FROM accounts
         WHERE email = $1
         LIMIT 1
         ",
@@ -41,4 +43,39 @@ where
     }
     .fetch_one(executor)
     .await?)
+}
+
+pub async fn create_session<'a, T>(
+    executor: T,
+    account_id: i32,
+    session_token: &str,
+    expires_at: NaiveDateTime,
+    csrf_token: &str,
+    csrf_token_expiration: NaiveDateTime,
+    csrf_token_refresh: NaiveDateTime,
+) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        INSERT INTO sessions
+        (
+            account_id, session_token, expires_at,
+            csrf_token_1, csrf_token_2, csrf_token_1_expiration, csrf_token_refresh
+        )
+        VALUES
+        (
+            $1, $2, $3,
+            $4, $4, $5, $6
+        )
+        ",
+        account_id,
+        session_token,
+        expires_at,
+        csrf_token,
+        csrf_token_expiration,
+        csrf_token_refresh
+    }.execute(executor).await?;
+    Ok(())
 }
