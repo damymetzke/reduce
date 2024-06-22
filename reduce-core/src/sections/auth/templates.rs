@@ -18,7 +18,7 @@
 
 use askama::Template;
 
-use crate::middleware::UserAuthenticationStatus;
+use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
 
 #[derive(Template)]
 #[template(path = "sections/auth/login.html")]

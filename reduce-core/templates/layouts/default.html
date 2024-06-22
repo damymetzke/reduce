@@ -39,7 +39,7 @@
         {% endfor %}
         <li class="bg-view-background-alternate border border-black rounded-xl text-lg font-bold">
         {% match session %}
-          {% when crate::middleware::UserAuthenticationStatus::Session{ csrf_token, session_id } %}
+          {% when crate::middleware::inject_user_authorization::UserAuthenticationStatus::Authenticated{ csrf_token, session_id } %}
             <form action="/core/auth/logout" method="post">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <button type="submit" class="px-4">Logout</button>

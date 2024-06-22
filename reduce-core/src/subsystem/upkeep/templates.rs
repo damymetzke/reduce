@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use askama::Template;
 
-use crate::middleware::UserAuthenticationStatus;
+use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
 
 #[derive(Clone)]
 pub struct PartItem {

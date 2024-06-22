@@ -40,7 +40,7 @@ use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    error::AppResult, middleware::UserAuthenticationStatus, template_extend::NavigationLink,
+    error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus, template_extend::NavigationLink,
 };
 
 use self::{
@@ -111,7 +111,7 @@ pub async fn post_logout(
     Extension(pool): Extension<Pool<Postgres>>,
 ) -> AppResult<Response<String>> {
     Ok(match session {
-        UserAuthenticationStatus::Session { session_id, .. } => {
+        UserAuthenticationStatus::Authenticated { session_id, .. } => {
             delete_session(&pool, session_id).await?;
             Response::builder()
                 .status(StatusCode::FOUND)

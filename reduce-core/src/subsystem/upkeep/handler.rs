@@ -24,7 +24,7 @@ use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{error::AppResult, middleware::UserAuthenticationStatus};
+use crate::{error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus};
 
 use super::{
     database::{
