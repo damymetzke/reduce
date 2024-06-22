@@ -111,7 +111,6 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
     }
 
     let app = app
-        .nest("/time-reports", subsystem::time_report::routes())
         .nest("/upkeep", subsystem::upkeep::routes());
 
     let app = routes::register(app)
