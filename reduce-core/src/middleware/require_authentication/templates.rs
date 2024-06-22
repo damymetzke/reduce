@@ -16,5 +16,16 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod inject_user_authorization;
-pub mod require_authentication;
+use askama::Template;
+
+use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
+
+#[derive(Template)]
+#[template(path = "error/unauthorized.html")]
+pub struct UnauthorizedTemplate {
+    pub session: UserAuthenticationStatus,
+}
+
+#[derive(Template)]
+#[template(path = "error/server_error.html")]
+pub struct ServerErrorTemplate;

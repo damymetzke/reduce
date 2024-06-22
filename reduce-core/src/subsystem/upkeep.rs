@@ -17,9 +17,10 @@
 */
 
 use axum::{
-    routing::{delete, get, post},
-    Router,
+    middleware, routing::{delete, get, post}, Router
 };
+
+use crate::middleware::require_authentication::require_authentication;
 
 use self::handler::{delete_item, get_index, patch_item, post_complete, post_index};
 
@@ -32,4 +33,5 @@ pub fn routes() -> Router {
         .route("/", get(get_index).post(post_index))
         .route("/complete/:id", post(post_complete))
         .route("/:id", delete(delete_item).patch(patch_item))
+        .layer(middleware::from_fn(require_authentication))
 }
