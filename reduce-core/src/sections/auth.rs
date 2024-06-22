@@ -33,7 +33,7 @@ use chrono::{Duration, Local};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{error::AppResult, template_extend::NavigationLink};
+use crate::{error::AppResult, middleware::UserAuthenticationStatus, template_extend::NavigationLink};
 
 use self::{
     database::{create_session, fetch_account},
@@ -42,7 +42,10 @@ use self::{
 
 use super::SectionRegistration;
 
-pub async fn get_login() -> AppResult<impl IntoResponse> {
+pub async fn get_login(
+    Extension(auth_status): Extension<UserAuthenticationStatus>
+) -> AppResult<impl IntoResponse> {
+    dbg!(auth_status);
     Ok(LoginTemplate)
 }
 
@@ -80,8 +83,6 @@ pub async fn post_login(
             let csrf_token = STANDARD.encode(csrf_token_bytes);
 
             let expires_at = Local::now().naive_local() + Duration::days(1);
-            let csrf_token_expiration = Local::now().naive_local() + Duration::minutes(30);
-            let csrf_token_refresh = Local::now().naive_local() + Duration::minutes(15);
 
             create_session(
                 &pool,
@@ -89,8 +90,6 @@ pub async fn post_login(
                 &session_token,
                 expires_at,
                 &csrf_token,
-                csrf_token_expiration,
-                csrf_token_refresh,
             )
             .await?;
 

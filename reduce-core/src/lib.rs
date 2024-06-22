@@ -17,6 +17,7 @@
 */
 
 mod error;
+mod middleware;
 mod routes;
 mod sections;
 mod subsystem;
@@ -26,6 +27,7 @@ use std::{env, error::Error, sync::Arc};
 
 use askama::Template;
 use axum::{Extension, Router};
+use middleware::AuthorizeUser;
 use sections::{ModuleRegistration, SectionRegistration};
 use template_extend::{set_navigation_links, NavigationLink};
 use tracing::{Level, Subscriber};
@@ -112,7 +114,9 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
         .nest("/time-reports", subsystem::time_report::routes())
         .nest("/upkeep", subsystem::upkeep::routes());
 
-    let app = routes::register(app).layer(Extension(db_pool));
+    let app = routes::register(app)
+        .layer(Extension(db_pool.clone()))
+        .layer(AuthorizeUser { pool: db_pool });
 
     set_navigation_links(Arc::from(all_navigation_links))?;
 

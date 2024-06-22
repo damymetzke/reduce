@@ -51,8 +51,6 @@ pub async fn create_session<'a, T>(
     session_token: &str,
     expires_at: NaiveDateTime,
     csrf_token: &str,
-    csrf_token_expiration: NaiveDateTime,
-    csrf_token_refresh: NaiveDateTime,
 ) -> Result<()>
 where
     T: Executor<'a, Database = Postgres>,
@@ -60,22 +58,14 @@ where
     query! {
         "
         INSERT INTO sessions
-        (
-            account_id, session_token, expires_at,
-            csrf_token_1, csrf_token_2, csrf_token_1_expiration, csrf_token_refresh
-        )
+        ( account_id, session_token, expires_at, csrf_token)
         VALUES
-        (
-            $1, $2, $3,
-            $4, $4, $5, $6
-        )
+        ( $1, $2, $3, $4)
         ",
         account_id,
         session_token,
         expires_at,
         csrf_token,
-        csrf_token_expiration,
-        csrf_token_refresh
     }.execute(executor).await?;
     Ok(())
 }

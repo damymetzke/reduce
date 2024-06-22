@@ -10,11 +10,7 @@ CREATE TABLE sessions (
     session_token VARCHAR(44) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
-    csrf_token_1 VARCHAR(24) NOT NULL,
-    csrf_token_2 VARCHAR(24) NOT NULL,
-    csrf_token_1_expiration TIMESTAMP NOT NULL,
-    csrf_token_2_expiration TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    csrf_token_refresh TIMESTAMP NOT NULL
+    csrf_token VARCHAR(24) NOT NULL
 );
 
 CREATE TABLE projects (
