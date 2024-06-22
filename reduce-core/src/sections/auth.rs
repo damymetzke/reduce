@@ -28,9 +28,7 @@ use argon2::{
 };
 use askama_axum::IntoResponse;
 use axum::{
-    debug_handler,
     http::{HeaderMap, Response, StatusCode},
-    response::Redirect,
     routing::{get, post},
     Extension, Form, Router,
 };
@@ -39,9 +37,7 @@ use chrono::{Duration, Local};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{
-    error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus, template_extend::NavigationLink,
-};
+use crate::{error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus};
 
 use self::{
     database::{create_session, delete_session, fetch_account},

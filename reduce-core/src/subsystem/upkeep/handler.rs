@@ -19,7 +19,7 @@
 use std::sync::Arc;
 
 use askama_axum::IntoResponse;
-use axum::{debug_handler, extract::Path, Extension, Form};
+use axum::{extract::Path, Extension, Form};
 use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
