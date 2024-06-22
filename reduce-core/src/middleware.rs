@@ -33,8 +33,13 @@ pub struct AuthorizeUserService<Inner> {
 #[derive(Clone, Debug)]
 pub enum UserAuthenticationStatus {
     Guest,
-    Expired { since: NaiveDateTime },
-    Session { csrf_token: Arc<str>, session_id: i32 },
+    Expired {
+        since: NaiveDateTime,
+    },
+    Session {
+        csrf_token: Arc<str>,
+        session_id: i32,
+    },
 }
 
 #[derive(Debug)]
