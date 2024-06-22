@@ -37,6 +37,17 @@
         {% for link in links %}
           <li class="bg-view-background-alternate border border-black rounded-xl text-lg font-bold"><a class="p-4" href="{{ link.href }}">{{ link.title }}</a></li>
         {% endfor %}
+        <li class="bg-view-background-alternate border border-black rounded-xl text-lg font-bold">
+        {% match session %}
+          {% when crate::middleware::UserAuthenticationStatus::Session{ csrf_token, session_id } %}
+            <form action="/core/auth/logout" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="px-4">Logout</button>
+            </form>
+          {% when _ %}
+            <a class="p-4" href="/core/auth/login">Login</a>
+        {% endmatch %}
+        </li>
       </ul>
       <hr class="border-gray-400 m-12">
     </header>

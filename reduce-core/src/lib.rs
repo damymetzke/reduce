@@ -27,7 +27,7 @@ use std::{env, error::Error, sync::Arc};
 
 use askama::Template;
 use axum::{Extension, Router};
-use middleware::AuthorizeUser;
+use middleware::{AuthorizeUser, UserAuthenticationStatus};
 use sections::{ModuleRegistration, SectionRegistration};
 use template_extend::{set_navigation_links, NavigationLink};
 use tracing::{Level, Subscriber};
@@ -35,7 +35,9 @@ use tracing_subscriber::FmtSubscriber;
 
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
-struct IndexTemplate;
+struct IndexTemplate {
+    session: UserAuthenticationStatus,
+}
 
 pub fn setup_tracing() -> Result<(), Box<dyn Error>> {
     let is_production = matches!(env::var("ENVIRONMENT").as_deref(), Ok("production"));
@@ -110,8 +112,7 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
         app = app.nest(default_module_name, module_router);
     }
 
-    let app = app
-        .nest("/upkeep", subsystem::upkeep::routes());
+    let app = app.nest("/upkeep", subsystem::upkeep::routes());
 
     let app = routes::register(app)
         .layer(Extension(db_pool.clone()))

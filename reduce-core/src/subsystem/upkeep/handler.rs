@@ -24,14 +24,20 @@ use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::error::AppResult;
+use crate::{error::AppResult, middleware::UserAuthenticationStatus};
 
 use super::{
-    database::{complete_upkeep_item, delete_upkeep_item, fetch_upkeep_items, insert_upkeep_item, patch_due_date_upkeep_item},
+    database::{
+        complete_upkeep_item, delete_upkeep_item, fetch_upkeep_items, insert_upkeep_item,
+        patch_due_date_upkeep_item,
+    },
     templates::{IndexTemplate, PartItem},
 };
 
-pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<impl IntoResponse> {
+pub async fn get_index(
+    Extension(session): Extension<UserAuthenticationStatus>,
+    Extension(pool): Extension<Pool<Postgres>>,
+) -> AppResult<impl IntoResponse> {
     let items = fetch_upkeep_items(&pool).await?;
     let mut split_at = 0;
     let today = Local::now().date_naive();
@@ -64,7 +70,11 @@ pub async fn get_index(Extension(pool): Extension<Pool<Postgres>>) -> AppResult<
     let (due_items, backlog) = items.split_at(split_at);
     let due_items: Box<[_]> = due_items.into();
     let backlog: Box<[_]> = backlog.into();
-    Ok(IndexTemplate { due_items, backlog })
+    Ok(IndexTemplate {
+        due_items,
+        backlog,
+        session,
+    })
 }
 
 #[derive(Deserialize)]
@@ -74,30 +84,32 @@ pub struct PostIndexForm {
 }
 
 pub async fn post_index(
+    session: Extension<UserAuthenticationStatus>,
     pool: Extension<Pool<Postgres>>,
     Form(PostIndexForm { title, cooldown }): Form<PostIndexForm>,
 ) -> AppResult<impl IntoResponse> {
     let due = Local::now().date_naive() + Duration::days(cooldown as i64);
     insert_upkeep_item(&pool.0, title.as_ref(), cooldown, &due).await?;
-    get_index(pool).await
+    get_index(session, pool).await
 }
 
 pub async fn post_complete(
+    session: Extension<UserAuthenticationStatus>,
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
     complete_upkeep_item(&pool.0, id).await?;
-    get_index(pool).await
+    get_index(session, pool).await
 }
 
 pub async fn delete_item(
+    session: Extension<UserAuthenticationStatus>,
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
     delete_upkeep_item(&pool.0, id).await?;
-    get_index(pool).await
+    get_index(session, pool).await
 }
-
 
 #[derive(Deserialize)]
 pub struct PatchItemForm {
@@ -105,10 +117,11 @@ pub struct PatchItemForm {
 }
 
 pub async fn patch_item(
+    session: Extension<UserAuthenticationStatus>,
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
     Form(PatchItemForm { due_date }): Form<PatchItemForm>,
 ) -> AppResult<impl IntoResponse> {
     patch_due_date_upkeep_item(&pool.0, id, &due_date).await?;
-    get_index(pool).await
+    get_index(session, pool).await
 }

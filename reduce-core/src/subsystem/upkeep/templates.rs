@@ -20,6 +20,8 @@ use std::sync::Arc;
 
 use askama::Template;
 
+use crate::middleware::UserAuthenticationStatus;
+
 #[derive(Clone)]
 pub struct PartItem {
     pub id: i32,
@@ -34,4 +36,5 @@ pub struct PartItem {
 pub struct IndexTemplate {
     pub due_items: Box<[PartItem]>,
     pub backlog: Box<[PartItem]>,
+    pub session: UserAuthenticationStatus,
 }

@@ -27,26 +27,33 @@ use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
 };
 use askama_axum::IntoResponse;
-use axum::{http::HeaderMap, routing::get, Extension, Form, Router};
+use axum::{
+    debug_handler,
+    http::{HeaderMap, Response, StatusCode},
+    response::Redirect,
+    routing::{get, post},
+    Extension, Form, Router,
+};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use chrono::{Duration, Local};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{error::AppResult, middleware::UserAuthenticationStatus, template_extend::NavigationLink};
+use crate::{
+    error::AppResult, middleware::UserAuthenticationStatus, template_extend::NavigationLink,
+};
 
 use self::{
-    database::{create_session, fetch_account},
+    database::{create_session, delete_session, fetch_account},
     templates::LoginTemplate,
 };
 
 use super::SectionRegistration;
 
 pub async fn get_login(
-    Extension(auth_status): Extension<UserAuthenticationStatus>
+    Extension(session): Extension<UserAuthenticationStatus>,
 ) -> AppResult<impl IntoResponse> {
-    dbg!(auth_status);
-    Ok(LoginTemplate)
+    Ok(LoginTemplate { session })
 }
 
 #[derive(Deserialize)]
@@ -56,6 +63,7 @@ pub struct PostLoginForm {
 }
 
 pub async fn post_login(
+    Extension(session): Extension<UserAuthenticationStatus>,
     Extension(pool): Extension<Pool<Postgres>>,
     Form(PostLoginForm { email, password }): Form<PostLoginForm>,
 ) -> AppResult<impl IntoResponse> {
@@ -70,7 +78,7 @@ pub async fn post_login(
     let none_headers = HeaderMap::new();
 
     match result {
-        Err(_) => Ok((none_headers, LoginTemplate)),
+        Err(_) => Ok((none_headers, LoginTemplate { session })),
         Ok(_) => {
             let account_id = account.id;
             let mut session_token_bytes = [0u8; 33];
@@ -84,14 +92,7 @@ pub async fn post_login(
 
             let expires_at = Local::now().naive_local() + Duration::days(1);
 
-            create_session(
-                &pool,
-                account_id,
-                &session_token,
-                expires_at,
-                &csrf_token,
-            )
-            .await?;
+            create_session(&pool, account_id, &session_token, expires_at, &csrf_token).await?;
 
             let mut redirect_headers = HeaderMap::new();
             redirect_headers.insert("HX-Location", "/".parse()?);
@@ -100,18 +101,35 @@ pub async fn post_login(
                 format!("session_token={}; Path=/; HttpOnly; Secure", session_token).parse()?,
             );
 
-            Ok((redirect_headers, LoginTemplate))
+            Ok((redirect_headers, LoginTemplate { session }))
         }
     }
 }
 
-pub fn register() -> SectionRegistration {
-    let router = Router::new().route("/login", get(get_login).post(post_login));
+pub async fn post_logout(
+    Extension(session): Extension<UserAuthenticationStatus>,
+    Extension(pool): Extension<Pool<Postgres>>,
+) -> AppResult<Response<String>> {
+    Ok(match session {
+        UserAuthenticationStatus::Session { session_id, .. } => {
+            delete_session(&pool, session_id).await?;
+            Response::builder()
+                .status(StatusCode::FOUND)
+                .header("Location", "/")
+                .body("Redirecting".into())?
+        }
+        _ => Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Unauthorized access".into())?,
+    })
+}
 
-    let navigation_links = Box::from([NavigationLink {
-        href: "/core/auth/login".into(),
-        title: "Login".into(),
-    }]);
+pub fn register() -> SectionRegistration {
+    let router = Router::new()
+        .route("/login", get(get_login).post(post_login))
+        .route("/logout", post(post_logout));
+
+    let navigation_links = Box::from([]);
     SectionRegistration {
         default_section_name: "/auth",
         router,

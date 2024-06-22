@@ -66,6 +66,24 @@ where
         session_token,
         expires_at,
         csrf_token,
-    }.execute(executor).await?;
+    }
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn delete_session<'a, T>(executor: T, session_id: i32) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        DELETE FROM sessions
+        WHERE id = $1
+        ",
+        session_id
+    }
+    .execute(executor)
+    .await?;
     Ok(())
 }

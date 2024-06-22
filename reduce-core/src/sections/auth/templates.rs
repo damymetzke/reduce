@@ -18,6 +18,10 @@
 
 use askama::Template;
 
+use crate::middleware::UserAuthenticationStatus;
+
 #[derive(Template)]
 #[template(path = "sections/auth/login.html")]
-pub struct LoginTemplate;
+pub struct LoginTemplate {
+    pub session: UserAuthenticationStatus,
+}

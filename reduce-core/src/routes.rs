@@ -17,12 +17,12 @@
 */
 
 use askama_axum::IntoResponse;
-use axum::{http::HeaderMap, routing::get, Router};
+use axum::{http::HeaderMap, routing::get, Extension, Router};
 
-use crate::{error::AppResult, IndexTemplate};
+use crate::{error::AppResult, middleware::UserAuthenticationStatus, IndexTemplate};
 
-async fn index() -> IndexTemplate {
-    IndexTemplate
+async fn index(Extension(session): Extension<UserAuthenticationStatus>) -> IndexTemplate {
+    IndexTemplate { session }
 }
 
 async fn get_style() -> AppResult<impl IntoResponse> {
@@ -37,6 +37,6 @@ async fn get_style() -> AppResult<impl IntoResponse> {
 
 pub fn register(router: Router) -> Router {
     router
-        .route("/", get(|| async move { index().await }))
+        .route("/", get(index))
         .route("/static/style.css", get(get_style))
 }
