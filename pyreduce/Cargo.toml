@@ -9,6 +9,6 @@ name = "pyreduce"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.21.1"
+pyo3 = "0.22.0"
 reduce-core = { version = "0.1.0", path = "../reduce-core" }
 tokio = "1.37.0"
