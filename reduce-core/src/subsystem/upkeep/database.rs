@@ -29,7 +29,10 @@ pub struct FetchUpkeepItem {
     pub due: NaiveDate,
 }
 
-pub async fn fetch_upkeep_items<'a, T>(executor: T) -> Result<Arc<[FetchUpkeepItem]>>
+pub async fn fetch_upkeep_items<'a, T>(
+    executor: T,
+    account_id: i32,
+) -> Result<Arc<[FetchUpkeepItem]>>
 where
     T: Executor<'a, Database = Postgres>,
 {
@@ -37,8 +40,10 @@ where
         FetchUpkeepItem,
         "
         SELECT id, description, cooldown_days, due FROM upkeep_items
+        WHERE account_id = $1
         ORDER BY due ASC
-        "
+        ",
+        account_id
     }
     .fetch_all(executor)
     .await?
@@ -47,6 +52,7 @@ where
 
 pub async fn insert_upkeep_item<'a, T>(
     executor: T,
+    account_id: i32,
     description: &str,
     cooldown_days: i32,
     due: &NaiveDate,
@@ -56,9 +62,10 @@ where
 {
     query! {
         "
-        INSERT INTO upkeep_items (description, cooldown_days, due)
-        VALUES ($1, $2, $3)
+        INSERT INTO upkeep_items (account_id, description, cooldown_days, due)
+        VALUES ($1, $2, $3, $4)
         ",
+        account_id,
         description,
         cooldown_days,
         due,
@@ -68,7 +75,7 @@ where
     Ok(())
 }
 
-pub async fn complete_upkeep_item<'a, T>(executor: T, id: i32) -> Result<()>
+pub async fn complete_upkeep_item<'a, T>(executor: T, id: i32, account_id: i32) -> Result<()>
 where
     T: Executor<'a, Database = Postgres>,
 {
@@ -76,42 +83,50 @@ where
         "
         UPDATE upkeep_items
         SET due = CURRENT_DATE + cooldown_days * INTERVAL '1 day'
-        WHERE id = $1
+        WHERE id = $1 AND account_id = $2
         ",
-        id
+        id,
+        account_id,
     }
     .execute(executor)
     .await?;
     Ok(())
 }
 
-pub async fn delete_upkeep_item<'a, T>(executor: T, id: i32) -> Result<()>
+pub async fn delete_upkeep_item<'a, T>(executor: T, id: i32, account_id: i32) -> Result<()>
 where
     T: Executor<'a, Database = Postgres>,
 {
     query! {
         "
         DELETE FROM upkeep_items
-        WHERE id = $1
+        WHERE id = $1 AND account_id = $2
         ",
-        id
+        id,
+        account_id,
     }
     .execute(executor)
     .await?;
     Ok(())
 }
 
-pub async fn patch_due_date_upkeep_item<'a, T>(executor: T, id: i32, due: &NaiveDate) -> Result<()>
+pub async fn patch_due_date_upkeep_item<'a, T>(
+    executor: T,
+    id: i32,
+    account_id: i32,
+    due: &NaiveDate,
+) -> Result<()>
 where
     T: Executor<'a, Database = Postgres>,
 {
     query! {
         "
         UPDATE upkeep_items
-        SET due = $2
-        WHERE id = $1
+        SET due = $3
+        WHERE id = $1 AND account_id = $2
         ",
         id,
+        account_id,
         due
     }
     .execute(executor)

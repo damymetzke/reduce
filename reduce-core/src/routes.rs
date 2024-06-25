@@ -19,9 +19,7 @@
 use askama_axum::IntoResponse;
 use axum::{http::HeaderMap, routing::get, Extension, Router};
 
-use crate::{
-    error::AppResult, extensions::Session, IndexTemplate
-};
+use crate::{error::AppResult, extensions::Session, IndexTemplate};
 
 async fn index(Extension(session): Extension<Session>) -> IndexTemplate {
     IndexTemplate { session }

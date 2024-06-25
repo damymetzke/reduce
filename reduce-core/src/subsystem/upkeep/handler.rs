@@ -38,7 +38,7 @@ pub async fn get_index(
     Extension(authorized_session): Extension<AuthorizedSession>,
     Extension(pool): Extension<Pool<Postgres>>,
 ) -> AppResult<impl IntoResponse> {
-    let items = fetch_upkeep_items(&pool).await?;
+    let items = fetch_upkeep_items(&pool, authorized_session.account_id).await?;
     let mut split_at = 0;
     let today = Local::now().date_naive();
     let items: Box<_> = items
@@ -91,7 +91,14 @@ pub async fn post_index(
 ) -> AppResult<impl IntoResponse> {
     let cooldown: i32 = cooldown.parse()?;
     let due = Local::now().date_naive() + Duration::days(cooldown as i64);
-    insert_upkeep_item(&pool.0, title.as_ref(), cooldown, &due).await?;
+    insert_upkeep_item(
+        &pool.0,
+        session.0.account_id,
+        title.as_ref(),
+        cooldown,
+        &due,
+    )
+    .await?;
     get_index(session, pool).await
 }
 
@@ -100,7 +107,7 @@ pub async fn post_complete(
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
-    complete_upkeep_item(&pool.0, id).await?;
+    complete_upkeep_item(&pool.0, id, session.0.account_id).await?;
     get_index(session, pool).await
 }
 
@@ -109,7 +116,7 @@ pub async fn delete_item(
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
-    delete_upkeep_item(&pool.0, id).await?;
+    delete_upkeep_item(&pool.0, id, session.0.account_id).await?;
     get_index(session, pool).await
 }
 
@@ -124,6 +131,6 @@ pub async fn patch_item(
     Path(id): Path<i32>,
     Form(PatchItemForm { due_date }): Form<PatchItemForm>,
 ) -> AppResult<impl IntoResponse> {
-    patch_due_date_upkeep_item(&pool.0, id, &due_date).await?;
+    patch_due_date_upkeep_item(&pool.0, id, session.0.account_id, &due_date).await?;
     get_index(session, pool).await
 }

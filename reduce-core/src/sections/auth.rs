@@ -46,9 +46,7 @@ use self::{
 
 use super::SectionRegistration;
 
-pub async fn get_login(
-    Extension(session): Extension<Session>,
-) -> AppResult<impl IntoResponse> {
+pub async fn get_login(Extension(session): Extension<Session>) -> AppResult<impl IntoResponse> {
     Ok(LoginTemplate { session })
 }
 
