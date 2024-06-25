@@ -18,14 +18,9 @@
 
 use std::sync::Arc;
 
-use chrono::NaiveDateTime;
-
 #[derive(Clone, Debug)]
 pub enum Session {
     Guest,
-    Expired {
-        since: NaiveDateTime,
-    },
     Authenticated {
         csrf_token: Arc<str>,
         session_id: i32,

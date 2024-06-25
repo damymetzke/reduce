@@ -77,9 +77,7 @@ where
                     Ok(data) => {
                         let now = Local::now().naive_local();
                         if now >= data.expires_at {
-                            req.extensions_mut().insert(Session::Expired {
-                                since: data.expires_at,
-                            })
+                            req.extensions_mut().insert(Session::Guest)
                         } else {
                             req.extensions_mut().insert(Session::Authenticated {
                                 csrf_token: data.csrf_token,
