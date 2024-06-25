@@ -19,18 +19,14 @@
 use std::sync::Arc;
 
 use askama_axum::IntoResponse;
-use axum::{debug_handler, extract::Path, Extension, Form};
+use axum::{extract::Path, Extension, Form};
 use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    error::AppResult,
-    extractors::csrf_form::CsrfForm,
-    middleware::{
-        inject_user_authorization::UserAuthenticationStatus,
-        require_authentication::AuthorizedSession,
-    },
+    error::AppResult, extractors::csrf_form::CsrfForm,
+    middleware::require_authentication::AuthorizedSession,
 };
 
 use super::{

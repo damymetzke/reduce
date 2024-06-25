@@ -20,12 +20,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use axum::{
-    extract::{
-        rejection::{FailedToDeserializeFormBody, FormRejection},
-        FromRequest, FromRequestParts, Request,
-    },
+    extract::{rejection::FormRejection, FromRequest, Request},
     response::{IntoResponse, Response},
-    Extension, Form,
+    Form,
 };
 use serde::Deserialize;
 use thiserror::Error;
