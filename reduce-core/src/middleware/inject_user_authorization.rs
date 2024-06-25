@@ -24,24 +24,14 @@ use chrono::{Local, NaiveDateTime};
 use sqlx::{query_as, Pool, Postgres};
 use tower::{Layer, Service};
 
+use crate::extensions::Session;
+
 use super::require_authentication::AuthorizedSession;
 
 #[derive(Clone, Debug)]
 pub struct InjectUserAuthorizationService<Inner> {
     inner: Inner,
     pool: Pool<Postgres>,
-}
-
-#[derive(Clone, Debug)]
-pub enum UserAuthenticationStatus {
-    Guest,
-    Expired {
-        since: NaiveDateTime,
-    },
-    Authenticated {
-        csrf_token: Arc<str>,
-        session_id: i32,
-    },
 }
 
 #[derive(Debug)]
@@ -90,21 +80,21 @@ where
                         let now = Local::now().naive_local();
                         if now >= data.expires_at {
                             req.extensions_mut()
-                                .insert(UserAuthenticationStatus::Expired {
+                                .insert(Session::Expired {
                                     since: data.expires_at,
                                 })
                         } else {
                             req.extensions_mut()
-                                .insert(UserAuthenticationStatus::Authenticated {
+                                .insert(Session::Authenticated {
                                     csrf_token: data.csrf_token,
                                     session_id: data.id,
                                 })
                         }
                     }
-                    Err(_) => req.extensions_mut().insert(UserAuthenticationStatus::Guest),
+                    Err(_) => req.extensions_mut().insert(Session::Guest),
                 };
             } else {
-                req.extensions_mut().insert(UserAuthenticationStatus::Guest);
+                req.extensions_mut().insert(Session::Guest);
             };
             req
         };
@@ -136,14 +126,14 @@ impl<Inner> Layer<Inner> for InjectUserAuthorization {
     }
 }
 
-impl From<AuthorizedSession> for UserAuthenticationStatus {
+impl From<AuthorizedSession> for Session {
     fn from(
         AuthorizedSession {
             csrf_token,
             session_id,
         }: AuthorizedSession,
     ) -> Self {
-        UserAuthenticationStatus::Authenticated {
+        Session::Authenticated {
             csrf_token,
             session_id,
         }

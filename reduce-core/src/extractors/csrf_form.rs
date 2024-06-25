@@ -27,13 +27,7 @@ use axum::{
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::{
-    error,
-    middleware::{
-        inject_user_authorization::UserAuthenticationStatus,
-        require_authentication::AuthorizedSession,
-    },
-};
+use crate::{error, extensions::Session, middleware::require_authentication::AuthorizedSession};
 
 #[derive(Deserialize)]
 struct CsrfTokenInner {
@@ -55,7 +49,7 @@ pub enum CsrfFormRejection {
     #[error(transparent)]
     FormRejection(#[from] FormRejection),
     #[error("Could not authorize user")]
-    Unauthorized(UserAuthenticationStatus),
+    Unauthorized(Session),
     #[error("Server error")]
     ServerError,
 }
@@ -93,7 +87,7 @@ where
         let session = match session {
             Some(session) => session,
             _ => {
-                let session: Option<&UserAuthenticationStatus> = req.extensions().get();
+                let session: Option<&Session> = req.extensions().get();
                 return match session {
                     Some(session) => Err(CsrfFormRejection::Unauthorized(session.clone())),
                     _ => Err(CsrfFormRejection::ServerError),

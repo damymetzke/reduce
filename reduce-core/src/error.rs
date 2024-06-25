@@ -24,7 +24,7 @@ use axum::{
 };
 use tracing::warn;
 
-use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
+use crate::extensions::Session;
 
 pub struct AppError(anyhow::Error);
 
@@ -50,7 +50,7 @@ where
 
 pub type AppResult<T> = Result<T, AppError>;
 
-pub fn unauthorized_error(session: UserAuthenticationStatus) -> impl IntoResponse {
+pub fn unauthorized_error(session: Session) -> impl IntoResponse {
     (
         StatusCode::UNAUTHORIZED,
         templates::UnauthorizedError { session },

@@ -17,6 +17,7 @@
 */
 
 mod error;
+mod extensions;
 mod extractors;
 mod middleware;
 mod routes;
@@ -28,7 +29,8 @@ use std::{env, error::Error, sync::Arc};
 
 use askama::Template;
 use axum::{Extension, Router};
-use middleware::inject_user_authorization::{InjectUserAuthorization, UserAuthenticationStatus};
+use extensions::Session;
+use middleware::inject_user_authorization::InjectUserAuthorization;
 use sections::{ModuleRegistration, SectionRegistration};
 use template_extend::{set_navigation_links, NavigationLink};
 use tracing::{Level, Subscriber};
@@ -37,7 +39,7 @@ use tracing_subscriber::FmtSubscriber;
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
 struct IndexTemplate {
-    session: UserAuthenticationStatus,
+    session: Session,
 }
 
 pub fn setup_tracing() -> Result<(), Box<dyn Error>> {

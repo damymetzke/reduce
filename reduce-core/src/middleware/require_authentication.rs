@@ -23,11 +23,9 @@ use std::sync::Arc;
 use askama_axum::IntoResponse;
 use axum::{extract::Request, middleware::Next, response::Response};
 
-use crate::middleware::require_authentication::templates::{
+use crate::{extensions::Session, middleware::require_authentication::templates::{
     ServerErrorTemplate, UnauthorizedTemplate,
-};
-
-use super::inject_user_authorization::UserAuthenticationStatus;
+}};
 
 #[derive(Clone, Debug)]
 pub struct AuthorizedSession {
@@ -37,7 +35,7 @@ pub struct AuthorizedSession {
 
 pub async fn require_authentication(mut req: Request, next: Next) -> Response {
     let extensions = req.extensions_mut();
-    let authentication_status: Option<&UserAuthenticationStatus> = extensions.get();
+    let authentication_status: Option<&Session> = extensions.get();
 
     let authentication_status = if let Some(authentication_status) = authentication_status {
         authentication_status
@@ -46,7 +44,7 @@ pub async fn require_authentication(mut req: Request, next: Next) -> Response {
     };
 
     match authentication_status {
-        UserAuthenticationStatus::Authenticated {
+        Session::Authenticated {
             csrf_token,
             session_id,
         } => {

@@ -37,7 +37,7 @@ use chrono::{Duration, Local};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus};
+use crate::{error::AppResult, extensions::Session};
 
 use self::{
     database::{create_session, delete_session, fetch_account},
@@ -47,7 +47,7 @@ use self::{
 use super::SectionRegistration;
 
 pub async fn get_login(
-    Extension(session): Extension<UserAuthenticationStatus>,
+    Extension(session): Extension<Session>,
 ) -> AppResult<impl IntoResponse> {
     Ok(LoginTemplate { session })
 }
@@ -59,7 +59,7 @@ pub struct PostLoginForm {
 }
 
 pub async fn post_login(
-    Extension(session): Extension<UserAuthenticationStatus>,
+    Extension(session): Extension<Session>,
     Extension(pool): Extension<Pool<Postgres>>,
     Form(PostLoginForm { email, password }): Form<PostLoginForm>,
 ) -> AppResult<impl IntoResponse> {
@@ -103,11 +103,11 @@ pub async fn post_login(
 }
 
 pub async fn post_logout(
-    Extension(session): Extension<UserAuthenticationStatus>,
+    Extension(session): Extension<Session>,
     Extension(pool): Extension<Pool<Postgres>>,
 ) -> AppResult<Response<String>> {
     Ok(match session {
-        UserAuthenticationStatus::Authenticated { session_id, .. } => {
+        Session::Authenticated { session_id, .. } => {
             delete_session(&pool, session_id).await?;
             Response::builder()
                 .status(StatusCode::FOUND)

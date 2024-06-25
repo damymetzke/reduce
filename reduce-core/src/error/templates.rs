@@ -18,12 +18,12 @@
 
 use askama::Template;
 
-use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
+use crate::extensions::Session;
 
 #[derive(Template)]
 #[template(path = "error/unauthorized.html")]
 pub struct UnauthorizedError {
-    pub session: UserAuthenticationStatus,
+    pub session: Session,
 }
 
 #[derive(Template)]

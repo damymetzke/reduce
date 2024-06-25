@@ -16,12 +16,18 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use askama::Template;
+use std::sync::Arc;
 
-use crate::extensions::Session;
+use chrono::NaiveDateTime;
 
-#[derive(Template)]
-#[template(path = "sections/auth/login.html")]
-pub struct LoginTemplate {
-    pub session: Session,
+#[derive(Clone, Debug)]
+pub enum Session {
+    Guest,
+    Expired {
+        since: NaiveDateTime,
+    },
+    Authenticated {
+        csrf_token: Arc<str>,
+        session_id: i32,
+    },
 }

@@ -20,11 +20,10 @@ use askama_axum::IntoResponse;
 use axum::{http::HeaderMap, routing::get, Extension, Router};
 
 use crate::{
-    error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus,
-    IndexTemplate,
+    error::AppResult, extensions::Session, IndexTemplate
 };
 
-async fn index(Extension(session): Extension<UserAuthenticationStatus>) -> IndexTemplate {
+async fn index(Extension(session): Extension<Session>) -> IndexTemplate {
     IndexTemplate { session }
 }
 
