@@ -37,6 +37,7 @@ struct SessionData {
     csrf_token: Arc<str>,
     expires_at: NaiveDateTime,
     id: i32,
+    account_id: i32,
 }
 
 impl<Body, Inner> Service<Request<Body>> for InjectUserAuthorizationService<Inner>
@@ -69,7 +70,7 @@ where
         let fut = async move {
             if let Some(session_token) = session_token {
                 // Example async database query using sqlx
-                let result = query_as!{SessionData, "SELECT csrf_token, expires_at, id FROM sessions WHERE session_token = $1", &session_token}
+                let result = query_as!{SessionData, "SELECT csrf_token, expires_at, id, account_id FROM sessions WHERE session_token = $1", &session_token}
                     .fetch_one(&pool)
                     .await;
 
@@ -82,6 +83,7 @@ where
                             req.extensions_mut().insert(Session::Authenticated {
                                 csrf_token: data.csrf_token,
                                 session_id: data.id,
+                                account_id: data.account_id,
                             })
                         }
                     }

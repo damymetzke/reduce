@@ -40,10 +40,12 @@ pub async fn require_authentication(mut req: Request, next: Next) -> Response {
         Session::Authenticated {
             csrf_token,
             session_id,
+            account_id,
         } => {
             extensions.insert(AuthorizedSession {
                 csrf_token: csrf_token.clone(),
                 session_id: *session_id,
+                account_id: *account_id,
             });
             next.run(req).await
         }

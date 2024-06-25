@@ -24,6 +24,7 @@ pub enum Session {
     Authenticated {
         csrf_token: Arc<str>,
         session_id: i32,
+        account_id: i32,
     },
 }
 
@@ -31,6 +32,7 @@ pub enum Session {
 pub struct AuthorizedSession {
     pub csrf_token: Arc<str>,
     pub session_id: i32,
+    pub account_id: i32,
 }
 
 impl From<AuthorizedSession> for Session {
@@ -38,11 +40,13 @@ impl From<AuthorizedSession> for Session {
         AuthorizedSession {
             csrf_token,
             session_id,
+            account_id,
         }: AuthorizedSession,
     ) -> Self {
         Session::Authenticated {
             csrf_token,
             session_id,
+            account_id,
         }
     }
 }
