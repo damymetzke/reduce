@@ -62,7 +62,7 @@ impl ServerConfig {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pyreduce(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pyreduce(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ServerConfig>()?;
     Ok(())
 }
