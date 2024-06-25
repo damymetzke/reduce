@@ -31,3 +31,23 @@ pub enum Session {
         session_id: i32,
     },
 }
+
+#[derive(Clone, Debug)]
+pub struct AuthorizedSession {
+    pub csrf_token: Arc<str>,
+    pub session_id: i32,
+}
+
+impl From<AuthorizedSession> for Session {
+    fn from(
+        AuthorizedSession {
+            csrf_token,
+            session_id,
+        }: AuthorizedSession,
+    ) -> Self {
+        Session::Authenticated {
+            csrf_token,
+            session_id,
+        }
+    }
+}

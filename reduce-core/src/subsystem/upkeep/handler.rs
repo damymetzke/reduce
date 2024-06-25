@@ -24,10 +24,7 @@ use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{
-    error::AppResult, extractors::csrf_form::CsrfForm,
-    middleware::require_authentication::AuthorizedSession,
-};
+use crate::{error::AppResult, extensions::AuthorizedSession, extractors::csrf_form::CsrfForm};
 
 use super::{
     database::{

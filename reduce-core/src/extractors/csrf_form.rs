@@ -27,7 +27,10 @@ use axum::{
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::{error, extensions::Session, middleware::require_authentication::AuthorizedSession};
+use crate::{
+    error,
+    extensions::{AuthorizedSession, Session},
+};
 
 #[derive(Deserialize)]
 struct CsrfTokenInner {

@@ -20,9 +20,7 @@ use std::sync::Arc;
 
 use askama::Template;
 
-use crate::{
-    extensions::Session, middleware::require_authentication::AuthorizedSession,
-};
+use crate::extensions::{AuthorizedSession, Session};
 
 #[derive(Clone)]
 pub struct PartItem {

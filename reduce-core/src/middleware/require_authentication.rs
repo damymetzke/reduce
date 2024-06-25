@@ -18,20 +18,13 @@
 
 mod templates;
 
-use std::sync::Arc;
-
 use askama_axum::IntoResponse;
 use axum::{extract::Request, middleware::Next, response::Response};
 
-use crate::{extensions::Session, middleware::require_authentication::templates::{
-    ServerErrorTemplate, UnauthorizedTemplate,
-}};
-
-#[derive(Clone, Debug)]
-pub struct AuthorizedSession {
-    pub csrf_token: Arc<str>,
-    pub session_id: i32,
-}
+use crate::{
+    extensions::{AuthorizedSession, Session},
+    middleware::require_authentication::templates::{ServerErrorTemplate, UnauthorizedTemplate},
+};
 
 pub async fn require_authentication(mut req: Request, next: Next) -> Response {
     let extensions = req.extensions_mut();

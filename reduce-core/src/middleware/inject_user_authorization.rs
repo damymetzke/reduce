@@ -26,8 +26,6 @@ use tower::{Layer, Service};
 
 use crate::extensions::Session;
 
-use super::require_authentication::AuthorizedSession;
-
 #[derive(Clone, Debug)]
 pub struct InjectUserAuthorizationService<Inner> {
     inner: Inner,
@@ -79,16 +77,14 @@ where
                     Ok(data) => {
                         let now = Local::now().naive_local();
                         if now >= data.expires_at {
-                            req.extensions_mut()
-                                .insert(Session::Expired {
-                                    since: data.expires_at,
-                                })
+                            req.extensions_mut().insert(Session::Expired {
+                                since: data.expires_at,
+                            })
                         } else {
-                            req.extensions_mut()
-                                .insert(Session::Authenticated {
-                                    csrf_token: data.csrf_token,
-                                    session_id: data.id,
-                                })
+                            req.extensions_mut().insert(Session::Authenticated {
+                                csrf_token: data.csrf_token,
+                                session_id: data.id,
+                            })
                         }
                     }
                     Err(_) => req.extensions_mut().insert(Session::Guest),
@@ -122,20 +118,6 @@ impl<Inner> Layer<Inner> for InjectUserAuthorization {
         InjectUserAuthorizationService {
             inner,
             pool: self.pool.clone(),
-        }
-    }
-}
-
-impl From<AuthorizedSession> for Session {
-    fn from(
-        AuthorizedSession {
-            csrf_token,
-            session_id,
-        }: AuthorizedSession,
-    ) -> Self {
-        Session::Authenticated {
-            csrf_token,
-            session_id,
         }
     }
 }
