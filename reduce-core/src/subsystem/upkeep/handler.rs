@@ -19,12 +19,19 @@
 use std::sync::Arc;
 
 use askama_axum::IntoResponse;
-use axum::{extract::Path, Extension, Form};
+use axum::{debug_handler, extract::Path, Extension, Form};
 use chrono::{Duration, Local, NaiveDate};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
-use crate::{error::AppResult, middleware::inject_user_authorization::UserAuthenticationStatus};
+use crate::{
+    error::AppResult,
+    extractors::csrf_form::CsrfForm,
+    middleware::{
+        inject_user_authorization::UserAuthenticationStatus,
+        require_authentication::AuthorizedSession,
+    },
+};
 
 use super::{
     database::{
@@ -35,7 +42,7 @@ use super::{
 };
 
 pub async fn get_index(
-    Extension(session): Extension<UserAuthenticationStatus>,
+    Extension(authorized_session): Extension<AuthorizedSession>,
     Extension(pool): Extension<Pool<Postgres>>,
 ) -> AppResult<impl IntoResponse> {
     let items = fetch_upkeep_items(&pool).await?;
@@ -73,28 +80,30 @@ pub async fn get_index(
     Ok(IndexTemplate {
         due_items,
         backlog,
-        session,
+        session: authorized_session.clone().into(),
+        authorized_session,
     })
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct PostIndexForm {
     title: Arc<str>,
-    cooldown: i32,
+    cooldown: Arc<str>,
 }
 
 pub async fn post_index(
-    session: Extension<UserAuthenticationStatus>,
+    session: Extension<AuthorizedSession>,
     pool: Extension<Pool<Postgres>>,
-    Form(PostIndexForm { title, cooldown }): Form<PostIndexForm>,
+    CsrfForm(PostIndexForm { title, cooldown }): CsrfForm<PostIndexForm>,
 ) -> AppResult<impl IntoResponse> {
+    let cooldown: i32 = cooldown.parse()?;
     let due = Local::now().date_naive() + Duration::days(cooldown as i64);
     insert_upkeep_item(&pool.0, title.as_ref(), cooldown, &due).await?;
     get_index(session, pool).await
 }
 
 pub async fn post_complete(
-    session: Extension<UserAuthenticationStatus>,
+    session: Extension<AuthorizedSession>,
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
@@ -103,7 +112,7 @@ pub async fn post_complete(
 }
 
 pub async fn delete_item(
-    session: Extension<UserAuthenticationStatus>,
+    session: Extension<AuthorizedSession>,
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
 ) -> AppResult<impl IntoResponse> {
@@ -117,7 +126,7 @@ pub struct PatchItemForm {
 }
 
 pub async fn patch_item(
-    session: Extension<UserAuthenticationStatus>,
+    session: Extension<AuthorizedSession>,
     pool: Extension<Pool<Postgres>>,
     Path(id): Path<i32>,
     Form(PatchItemForm { due_date }): Form<PatchItemForm>,

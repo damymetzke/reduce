@@ -16,24 +16,16 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use axum::{
-    middleware,
-    routing::{delete, get, post},
-    Router,
-};
+use askama::Template;
 
-use crate::middleware::require_authentication::require_authentication;
+use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
 
-use self::handler::{delete_item, get_index, patch_item, post_complete, post_index};
-
-mod database;
-mod handler;
-mod templates;
-
-pub fn routes() -> Router {
-    Router::new()
-        .route("/", get(get_index).post(post_index))
-        .route("/complete/:id", post(post_complete))
-        .route("/:id", delete(delete_item).patch(patch_item))
-        .layer(middleware::from_fn(require_authentication))
+#[derive(Template)]
+#[template(path = "error/unauthorized.html")]
+pub struct UnauthorizedError {
+    pub session: UserAuthenticationStatus,
 }
+
+#[derive(Template)]
+#[template(path = "error/server_error.html")]
+pub struct ServerError;

@@ -20,7 +20,9 @@ use std::sync::Arc;
 
 use askama::Template;
 
-use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
+use crate::middleware::{
+    inject_user_authorization::UserAuthenticationStatus, require_authentication::AuthorizedSession,
+};
 
 #[derive(Clone)]
 pub struct PartItem {
@@ -37,4 +39,5 @@ pub struct IndexTemplate {
     pub due_items: Box<[PartItem]>,
     pub backlog: Box<[PartItem]>,
     pub session: UserAuthenticationStatus,
+    pub authorized_session: AuthorizedSession,
 }

@@ -17,6 +17,7 @@
 */
 
 mod error;
+mod extractors;
 mod middleware;
 mod routes;
 mod sections;

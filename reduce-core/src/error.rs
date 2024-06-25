@@ -16,11 +16,15 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+mod templates;
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use tracing::warn;
+
+use crate::middleware::inject_user_authorization::UserAuthenticationStatus;
 
 pub struct AppError(anyhow::Error);
 
@@ -45,3 +49,14 @@ where
 }
 
 pub type AppResult<T> = Result<T, AppError>;
+
+pub fn unauthorized_error(session: UserAuthenticationStatus) -> impl IntoResponse {
+    (
+        StatusCode::UNAUTHORIZED,
+        templates::UnauthorizedError { session },
+    )
+}
+
+pub fn server_error() -> impl IntoResponse {
+    (StatusCode::INTERNAL_SERVER_ERROR, templates::ServerError)
+}

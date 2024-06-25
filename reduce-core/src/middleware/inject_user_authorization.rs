@@ -24,6 +24,8 @@ use chrono::{Local, NaiveDateTime};
 use sqlx::{query_as, Pool, Postgres};
 use tower::{Layer, Service};
 
+use super::require_authentication::AuthorizedSession;
+
 #[derive(Clone, Debug)]
 pub struct InjectUserAuthorizationService<Inner> {
     inner: Inner,
@@ -130,6 +132,20 @@ impl<Inner> Layer<Inner> for InjectUserAuthorization {
         InjectUserAuthorizationService {
             inner,
             pool: self.pool.clone(),
+        }
+    }
+}
+
+impl From<AuthorizedSession> for UserAuthenticationStatus {
+    fn from(
+        AuthorizedSession {
+            csrf_token,
+            session_id,
+        }: AuthorizedSession,
+    ) -> Self {
+        UserAuthenticationStatus::Authenticated {
+            csrf_token,
+            session_id,
         }
     }
 }
