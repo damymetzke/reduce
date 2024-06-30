@@ -40,7 +40,7 @@ use sqlx::{Pool, Postgres};
 use crate::{error::AppResult, extensions::Session};
 
 use self::{
-    database::{create_session, delete_session, fetch_account},
+    database::{create_session, delete_session, fetch_email_login_details},
     templates::LoginTemplate,
 };
 
@@ -61,7 +61,7 @@ pub async fn post_login(
     Extension(pool): Extension<Pool<Postgres>>,
     Form(PostLoginForm { email, password }): Form<PostLoginForm>,
 ) -> AppResult<impl IntoResponse> {
-    let account = fetch_account(&pool, &email).await?;
+    let account = fetch_email_login_details(&pool, &email).await?;
 
     let result = Argon2::default().verify_password(
         password.as_bytes(),
@@ -74,7 +74,7 @@ pub async fn post_login(
     match result {
         Err(_) => Ok((none_headers, LoginTemplate { session })),
         Ok(_) => {
-            let account_id = account.id;
+            let account_id = account.account_id;
             let mut session_token_bytes = [0u8; 33];
             let mut csrf_token_bytes = [0u8; 18];
 

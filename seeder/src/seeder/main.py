@@ -1,12 +1,11 @@
 import os
 from seeder.core import account
 import psycopg2
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 
 
 def main():
     load_dotenv(".env")
-    print(dotenv_values())
     conn = psycopg2.connect(
         dbname=os.getenv("DATABASE_NAME"),
         user=os.getenv("DATABASE_USER"),

@@ -1,6 +1,17 @@
 CREATE TABLE accounts(
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE bootstrap_keys(
+    key VARCHAR(44) NOT NULL PRIMARY KEY,
+    account_id INT NOT NULL REFERENCES accounts(id),
+    consumed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE email_password_logins(
+    account_id INT NOT NULL PRIMARY KEY REFERENCES accounts(id),
+    email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(100) NOT NULL
 );
 

@@ -23,19 +23,18 @@ use chrono::NaiveDateTime;
 use sqlx::{query, query_as, Executor, Postgres};
 
 pub struct FetchAccount {
-    pub id: i32,
-    pub email: Arc<str>,
+    pub account_id: i32,
     pub password_hash: Arc<str>,
 }
 
-pub async fn fetch_account<'a, T>(executor: T, email: &str) -> Result<FetchAccount>
+pub async fn fetch_email_login_details<'a, T>(executor: T, email: &str) -> Result<FetchAccount>
 where
     T: Executor<'a, Database = Postgres>,
 {
     Ok(query_as! {
         FetchAccount,
         "
-        SELECT id, email, password_hash FROM accounts
+        SELECT account_id, password_hash FROM email_password_logins
         WHERE email = $1
         LIMIT 1
         ",
