@@ -77,6 +77,8 @@ pub struct ServerConfig {
 }
 
 pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
+    dotenv::dotenv()?;
+
     let db_url = config.db_url;
     let db_pool = sqlx::postgres::PgPool::connect(&db_url).await?;
 

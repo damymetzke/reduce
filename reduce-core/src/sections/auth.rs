@@ -19,9 +19,9 @@
 mod database;
 mod templates;
 
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use argon2::{
     password_hash::rand_core::{OsRng, RngCore},
     Argon2, PasswordHash, PasswordVerifier,
@@ -35,16 +35,45 @@ use axum::{
 use base64::{engine::general_purpose::STANDARD, Engine};
 use chrono::{Duration, Local};
 use serde::Deserialize;
-use sqlx::{Pool, Postgres};
+use sqlx::{Executor, Pool, Postgres};
 
 use crate::{error::AppResult, extensions::Session};
 
 use self::{
-    database::{create_session, delete_session, fetch_email_login_details},
-    templates::LoginTemplate,
+    database::{
+        create_session, delete_session, fetch_bootstrap_secret_exists, fetch_email_login_details,
+        insert_bootstrap_secret, BootstrapSecretResult,
+    },
+    templates::{BootstrapTemplate, LoginTemplate},
 };
 
 use super::SectionRegistration;
+
+async fn setup_session<'a, T>(pool: T, account_id: i32) -> Result<HeaderMap>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    let mut session_token_bytes = [0u8; 33];
+    let mut csrf_token_bytes = [0u8; 18];
+
+    OsRng.fill_bytes(&mut session_token_bytes);
+    OsRng.fill_bytes(&mut csrf_token_bytes);
+
+    let session_token = STANDARD.encode(session_token_bytes);
+    let csrf_token = STANDARD.encode(csrf_token_bytes);
+
+    let expires_at = Local::now().naive_local() + Duration::days(1);
+
+    create_session(pool, account_id, &session_token, expires_at, &csrf_token).await?;
+
+    let mut redirect_headers = HeaderMap::new();
+    redirect_headers.insert("HX-Location", "/".parse()?);
+    redirect_headers.insert(
+        "Set-Cookie",
+        format!("session_token={}; Path=/; HttpOnly; Secure", session_token).parse()?,
+    );
+    Ok(redirect_headers)
+}
 
 pub async fn get_login(Extension(session): Extension<Session>) -> AppResult<impl IntoResponse> {
     Ok(LoginTemplate { session })
@@ -74,26 +103,7 @@ pub async fn post_login(
     match result {
         Err(_) => Ok((none_headers, LoginTemplate { session })),
         Ok(_) => {
-            let account_id = account.account_id;
-            let mut session_token_bytes = [0u8; 33];
-            let mut csrf_token_bytes = [0u8; 18];
-
-            OsRng.fill_bytes(&mut session_token_bytes);
-            OsRng.fill_bytes(&mut csrf_token_bytes);
-
-            let session_token = STANDARD.encode(session_token_bytes);
-            let csrf_token = STANDARD.encode(csrf_token_bytes);
-
-            let expires_at = Local::now().naive_local() + Duration::days(1);
-
-            create_session(&pool, account_id, &session_token, expires_at, &csrf_token).await?;
-
-            let mut redirect_headers = HeaderMap::new();
-            redirect_headers.insert("HX-Location", "/".parse()?);
-            redirect_headers.insert(
-                "Set-Cookie",
-                format!("session_token={}; Path=/; HttpOnly; Secure", session_token).parse()?,
-            );
+            let redirect_headers = setup_session(&pool, account.account_id).await?;
 
             Ok((redirect_headers, LoginTemplate { session }))
         }
@@ -118,10 +128,46 @@ pub async fn post_logout(
     })
 }
 
+pub async fn get_bootstrap(Extension(session): Extension<Session>) -> impl IntoResponse {
+    BootstrapTemplate { session }
+}
+
+#[derive(Deserialize)]
+pub struct PostBootstrapForm {
+    bootstrap_secret: Arc<str>,
+}
+
+pub async fn post_bootstrap(
+    Extension(session): Extension<Session>,
+    Extension(pool): Extension<Pool<Postgres>>,
+    Form(PostBootstrapForm { bootstrap_secret }): Form<PostBootstrapForm>,
+) -> AppResult<impl IntoResponse> {
+    let var = match env::var("REDUCE_BOOTSTRAP_SECRET") {
+        Ok(var) => var,
+        Err(e) => return Err(e.into()),
+    };
+
+    if *var != *bootstrap_secret {
+        return Err(anyhow!("Given secret does not match environment secret").into());
+    };
+
+    if fetch_bootstrap_secret_exists(&pool, &bootstrap_secret).await? {
+        return Err(anyhow!("You cannot reuse a secret").into());
+    };
+
+    let BootstrapSecretResult { account_id } =
+        insert_bootstrap_secret(&pool, &bootstrap_secret).await?;
+
+    let header_map = setup_session(&pool, account_id).await?;
+
+    Ok((header_map, BootstrapTemplate { session }))
+}
+
 pub fn register() -> SectionRegistration {
     let router = Router::new()
         .route("/login", get(get_login).post(post_login))
-        .route("/logout", post(post_logout));
+        .route("/logout", post(post_logout))
+        .route("/bootstrap", get(get_bootstrap).post(post_bootstrap));
 
     let navigation_links = Box::from([]);
     SectionRegistration {

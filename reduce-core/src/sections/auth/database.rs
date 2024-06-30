@@ -18,7 +18,7 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use sqlx::{query, query_as, Executor, Postgres};
 
@@ -85,4 +85,51 @@ where
     .execute(executor)
     .await?;
     Ok(())
+}
+
+pub async fn fetch_bootstrap_secret_exists<'a, T>(executor: T, secret: &str) -> Result<bool>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    match query! {
+        "
+        SELECT EXISTS(SELECT 1 FROM bootstrap_keys WHERE key = $1)
+        ",
+        secret
+    }
+    .fetch_one(executor)
+    .await
+    {
+        Ok(row) => row.exists.ok_or(anyhow!("Something went wrong")),
+        Err(err) => Err(err.into()),
+    }
+}
+
+pub struct BootstrapSecretResult {
+    pub account_id: i32,
+}
+
+pub async fn insert_bootstrap_secret<'a, T>(
+    executor: T,
+    secret: &str,
+) -> Result<BootstrapSecretResult>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    Ok(query_as! {
+        BootstrapSecretResult,
+        "
+        WITH inserted_account AS (
+            INSERT INTO accounts DEFAULT VALUES
+            RETURNING id
+        )
+        INSERT INTO bootstrap_keys (key, account_id)
+        SELECT $1, id
+        FROM inserted_account
+        RETURNING account_id;
+        ",
+        secret
+    }
+    .fetch_one(executor)
+    .await?)
 }

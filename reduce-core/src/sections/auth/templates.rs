@@ -25,3 +25,9 @@ use crate::extensions::Session;
 pub struct LoginTemplate {
     pub session: Session,
 }
+
+#[derive(Template)]
+#[template(path = "sections/auth/bootstrap.html")]
+pub struct BootstrapTemplate {
+    pub session: Session,
+}
