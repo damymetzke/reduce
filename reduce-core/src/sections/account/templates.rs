@@ -16,28 +16,26 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-mod account;
-mod auth;
+use std::{rc::Rc, sync::Arc};
 
-use axum::Router;
+use askama::{DynTemplate, Template};
 
-use crate::template_extend::NavigationLink;
+use crate::extensions::Session;
 
-pub struct SectionRegistration {
-    pub default_section_name: &'static str,
-    pub router: Router,
-    pub navigation_links: Box<[NavigationLink]>,
+#[derive(Template)]
+#[template(path="sections/account/index.html")]
+pub struct IndexTemplate {
+    pub session: Session,
+    pub current_methods: Rc<[Box<dyn DynTemplate>]>,
+    pub new_methods: Rc<[Box<dyn DynTemplate>]>,
 }
 
-pub struct ModuleRegistration {
-    pub default_module_name: &'static str,
-    pub sections: Box<[SectionRegistration]>,
+#[derive(Template)]
+#[template(path="sections/account/authenticate-methods/current-email-password.part.html")]
+pub struct CurrentEmailPasswordPartTemplate {
+    pub email: Arc<str>,
 }
 
-pub fn register() -> ModuleRegistration {
-    let sections = Box::from([auth::register(), account::register()]);
-    ModuleRegistration {
-        default_module_name: "/core",
-        sections,
-    }
-}
+#[derive(Template)]
+#[template(path="sections/account/authenticate-methods/new-email-password.part.html")]
+pub struct NewEmailPasswordPartTemplate;
