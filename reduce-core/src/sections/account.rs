@@ -16,34 +16,53 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+mod database;
 mod templates;
 
 use std::rc::Rc;
 
 use askama::DynTemplate;
-use axum::{routing::get, Extension, Router};
+use axum::{middleware, routing::get, Extension, Router};
+use database::fetch_email_for_login;
+use sqlx::{Pool, Postgres};
 use templates::{CurrentEmailPasswordPartTemplate, IndexTemplate, NewEmailPasswordPartTemplate};
 
-use crate::extensions::Session;
+use crate::{
+    error::AppResult, extensions::AuthorizedSession,
+    middleware::require_authentication::require_authentication,
+};
 
 use super::SectionRegistration;
 
-async fn get_index(Extension(session): Extension<Session>) -> IndexTemplate {
-    let current_methods = Rc::new([Box::new(CurrentEmailPasswordPartTemplate {
-        email: "user@example.com".into(),
-    }) as Box<dyn DynTemplate>]);
+async fn get_index(
+    Extension(pool): Extension<Pool<Postgres>>,
+    Extension(session): Extension<AuthorizedSession>,
+) -> AppResult<IndexTemplate> {
+    let (current_methods, new_methods): (Rc<[_]>, Rc<[_]>) =
+        match fetch_email_for_login(&pool, session.account_id).await? {
+            Some(email) => (
+                Rc::new([
+                    Box::new(CurrentEmailPasswordPartTemplate { email }) as Box<dyn DynTemplate>
+                ]),
+                Rc::new([]),
+            ),
+            None => (
+                Rc::new([]),
+                Rc::new([Box::new(NewEmailPasswordPartTemplate) as Box<dyn DynTemplate>]),
+            ),
+        };
 
-    let new_methods = Rc::new([Box::new(NewEmailPasswordPartTemplate) as Box<dyn DynTemplate>]);
-
-    IndexTemplate {
-        session,
+    Ok(IndexTemplate {
+        session: session.into(),
         current_methods,
         new_methods,
-    }
+    })
 }
 
 pub fn register() -> SectionRegistration {
-    let router = Router::new().route("/", get(get_index));
+    let router = Router::new()
+        .route("/", get(get_index))
+        .layer(middleware::from_fn(require_authentication));
 
     let navigation_links = Box::from([]);
     SectionRegistration {
