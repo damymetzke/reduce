@@ -18,15 +18,14 @@
 
 mod account;
 mod auth;
+mod upkeep;
 
 use axum::Router;
 
-use crate::template_extend::NavigationLink;
-
 pub struct SectionRegistration {
-    pub default_section_name: &'static str,
     pub router: Router,
-    pub navigation_links: Box<[NavigationLink]>,
+    pub entry_page: &'static str,
+    pub title: &'static str,
 }
 
 pub struct ModuleRegistration {
@@ -35,7 +34,7 @@ pub struct ModuleRegistration {
 }
 
 pub fn register() -> ModuleRegistration {
-    let sections = Box::from([auth::register(), account::register()]);
+    let sections = Box::from([auth::register(), account::register(), upkeep::register()]);
     ModuleRegistration {
         default_module_name: "/core",
         sections,

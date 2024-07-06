@@ -156,14 +156,13 @@ async fn put_password(
 
 pub fn register() -> SectionRegistration {
     let router = Router::new()
-        .route("/", get(get_index))
-        .route("/password", post(post_password).put(put_password))
+        .route("/account", get(get_index))
+        .route("/account/password", post(post_password).put(put_password))
         .layer(middleware::from_fn(require_authentication));
 
-    let navigation_links = Box::from([]);
     SectionRegistration {
-        default_section_name: "/account",
         router,
-        navigation_links,
+        entry_page: "/account",
+        title: "Account",
     }
 }

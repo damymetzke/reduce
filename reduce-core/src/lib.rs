@@ -22,7 +22,6 @@ mod extractors;
 mod middleware;
 mod routes;
 mod sections;
-mod subsystem;
 mod template_extend;
 
 use std::{env, error::Error, sync::Arc};
@@ -92,10 +91,6 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
             href: "/".into(),
             title: "Home".into(),
         },
-        NavigationLink {
-            href: "/upkeep".into(),
-            title: "Upkeep".into(),
-        },
     ]);
 
     for ModuleRegistration {
@@ -105,19 +100,21 @@ pub async fn start_server(config: ServerConfig) -> Result<(), Box<dyn Error>> {
     {
         let mut module_router = Router::new();
         for SectionRegistration {
-            default_section_name,
             router,
-            navigation_links,
+            entry_page,
+            title: name,
         } in sections.as_ref()
         {
-            module_router = module_router.nest(default_section_name, router.to_owned());
-            all_navigation_links.extend_from_slice(navigation_links.as_ref())
+            module_router = module_router.merge(router.to_owned());
+            if !entry_page.is_empty() { all_navigation_links.push(NavigationLink {
+                    href: format!("{}{}", default_module_name, entry_page).into(),
+                    title: Box::from(*name),
+                })
+            }
         }
 
         app = app.nest(default_module_name, module_router);
     }
-
-    let app = app.nest("/upkeep", subsystem::upkeep::routes());
 
     let app = routes::register(app)
         .layer(Extension(db_pool.clone()))

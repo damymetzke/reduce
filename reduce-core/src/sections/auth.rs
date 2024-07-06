@@ -165,14 +165,13 @@ pub async fn post_bootstrap(
 
 pub fn register() -> SectionRegistration {
     let router = Router::new()
-        .route("/login", get(get_login).post(post_login))
-        .route("/logout", post(post_logout))
-        .route("/bootstrap", get(get_bootstrap).post(post_bootstrap));
+        .route("/auth/login", get(get_login).post(post_login))
+        .route("/auth/logout", post(post_logout))
+        .route("/auth/bootstrap", get(get_bootstrap).post(post_bootstrap));
 
-    let navigation_links = Box::from([]);
     SectionRegistration {
-        default_section_name: "/auth",
         router,
-        navigation_links,
+        entry_page: "",
+        title: "",
     }
 }

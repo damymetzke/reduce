@@ -16,4 +16,32 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod upkeep;
+use axum::{
+    middleware,
+    routing::{delete, get, post},
+    Router,
+};
+
+use crate::middleware::require_authentication::require_authentication;
+
+use self::handler::{delete_item, get_index, patch_item, post_complete, post_index};
+
+use super::SectionRegistration;
+
+mod database;
+mod handler;
+mod templates;
+
+pub fn register() -> SectionRegistration {
+    let router = Router::new()
+        .route("/upkeep", get(get_index).post(post_index))
+        .route("/upkeep/complete/:id", post(post_complete))
+        .route("/upkeep/:id", delete(delete_item).patch(patch_item))
+        .layer(middleware::from_fn(require_authentication));
+
+    SectionRegistration {
+        router,
+        entry_page: "/upkeep",
+        title: "Upkeep",
+    }
+}
