@@ -1,0 +1,54 @@
+= Bootstrapping the server
+
+Setting up a Reduce server takes a few steps.  It is expected that you have basic knowledge of
+servers and how they work, I will not be explaining basics in a user friendly manner.
+
+== Prerequisites
+
+The only requirement besides hosting the server itself, is a Postgres instance.  Make sure you
+set the following environment variables on the Reduce server:
+
+```dotenv
+DATABASE_USER=your_username
+DATABASE_PASSWORD=your_password
+DATABASE_HOST=postgres.server.example.com
+DATABASE_PORT=5432
+DATABASE_BAME=your_database_name
+```
+
+== SSL/TLS
+
+As of now Reduce does not handle SSL/TLS at all, make sure you manage that in some other way.
+Reduce does require secure https-only cookies, so you need to do this.
+
+== Bootstrap token
+
+Initially, no accounts exist. To ensure absolute security, a token is used to make sure that
+whoever creates this account either manages the server, or got the key from them. To create
+this yourself, If you're on Linux the following command works:
+
+```sh
+tr -dc A-Za-z0-9 </dev/urandom | head -c 32 > bootstrap_secret
+```
+
+This is a secret, so treat it with respect. Use a trusted machine, and don't accidentally
+leak this.  When setting up the server, add the secret as an environment variable:
+
+```dotenv
+REDUCE_BOOTSTRAP_SECRET=the-secret-you-just-generated
+```
+
+After you've started the server and all, navigate to the URI:
+
+> /core/auth/bootstrap
+
+You will get a form where you can enter the same exact secret you've generated.  Entering the
+secret will create an account and a session with a short lifespan.  The account has no way to
+authenticate yet, meaning that if you lose the session you cannot recover it.  If you do that,
+you need to repeat the process with a new secret, as you may never use the same secret twice.
+The first thing you should do is set up authentication. Navigate to the following URI:
+
+> /core/account
+
+You should find an option to set up one of many authentication methods. Set it up to your liking,
+(2FA is highly encouraged). And at that point you are done bootstrapping.
