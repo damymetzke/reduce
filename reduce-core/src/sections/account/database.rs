@@ -28,10 +28,10 @@ where
     Ok(
         match query! {
             "
-        SELECT email FROM email_password_logins
-        WHERE account_id = $1
-        LIMIT 1
-        ",
+            SELECT email FROM email_password_logins
+            WHERE account_id = $1
+            LIMIT 1
+            ",
             user_id
         }
         .fetch_one(executor)
@@ -42,4 +42,68 @@ where
             Err(err) => return Err(err.into()),
         },
     )
+}
+
+pub async fn fetch_password_hash_for_login<'a, T>(executor: T, user_id: i32) -> Result<Arc<str>>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    Ok(query! {
+        "
+        SELECT password_hash FROM email_password_logins
+        WHERE account_id = $1
+        LIMIT 1
+        ",
+        user_id
+    }
+    .fetch_one(executor)
+    .await?
+    .password_hash
+    .into())
+}
+
+pub async fn insert_email_password_login<'a, T>(
+    executor: T,
+    account_id: i32,
+    email: &str,
+    password_hash: &str,
+) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        INSERT INTO email_password_logins(account_id, email, password_hash)
+        VALUES ($1, $2, $3)
+        ",
+        account_id,
+        email,
+        password_hash,
+    }
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn update_password<'a, T>(
+    executor: T,
+    user_id: i32,
+    new_password_hash: &str,
+) -> Result<()>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    query! {
+        "
+        UPDATE email_password_logins
+        SET password_hash = $2
+        WHERE account_id = $1
+        ",
+        user_id,
+        new_password_hash
+    }
+    .execute(executor)
+    .await?;
+
+    Ok(())
 }

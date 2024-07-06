@@ -20,10 +20,10 @@ use std::{rc::Rc, sync::Arc};
 
 use askama::{DynTemplate, Template};
 
-use crate::extensions::Session;
+use crate::extensions::{AuthorizedSession, Session};
 
 #[derive(Template)]
-#[template(path="sections/account/index.html")]
+#[template(path = "sections/account/index.html")]
 pub struct IndexTemplate {
     pub session: Session,
     pub current_methods: Rc<[Box<dyn DynTemplate>]>,
@@ -31,11 +31,14 @@ pub struct IndexTemplate {
 }
 
 #[derive(Template)]
-#[template(path="sections/account/authenticate-methods/current-email-password.part.html")]
+#[template(path = "sections/account/authenticate-methods/current-email-password.part.html")]
 pub struct CurrentEmailPasswordPartTemplate {
     pub email: Arc<str>,
+    pub authorized_session: AuthorizedSession,
 }
 
 #[derive(Template)]
-#[template(path="sections/account/authenticate-methods/new-email-password.part.html")]
-pub struct NewEmailPasswordPartTemplate;
+#[template(path = "sections/account/authenticate-methods/new-email-password.part.html")]
+pub struct NewEmailPasswordPartTemplate {
+    pub authorized_session: AuthorizedSession,
+}
