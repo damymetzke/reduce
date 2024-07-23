@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
-lock_version = "4.4.1"
-content_hash = "sha256:cc0568c47e36b4cce7d8e40bc09dd0ba08a3d728bec0dac0efb606baa192ec8e"
+lock_version = "4.4.2"
+content_hash = "sha256:e3fe105dc5d8dbf9a9871620b3008059ffe3182250aa80119540155460f74f0d"
 
 [[package]]
 name = "argon2-cffi"
